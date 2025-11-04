@@ -12,7 +12,7 @@
 */
 
 Route::get('/', 'HomeController@index')->name('home');
-
+Route::get('/home', 'HomeController@index')->name('home');
 Route::get('/notification', 'NotificationController@index')->name('notification');
 Route::post('/notifications/{id}/mark-viewed', 'NotificationController@markAsViewed')->name('notifications.markViewed');
 Route::post('/notifications/mark-all-read', 'NotificationController@markAllAsRead')->name('notifications.markAllRead');
