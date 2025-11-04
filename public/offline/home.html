@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,27 +43,36 @@
     body {
       background: #f5f5f5;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      padding-bottom: 80px;
+      padding-top: 80px;
+      padding-bottom: 100px;
     }
 
+    /* Top Header Styles */
     .top-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       background: white;
-      padding: 16px 20px;
+      padding: 16px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      z-index: 999;
+      height: 80px;
     }
 
     .user-greeting h6 {
       font-size: 18px;
       font-weight: 700;
-      color: #000;
-      margin: 0 0 2px 0;
+      color: #2c3e50;
+      margin: 0 0 4px 0;
     }
 
     .user-greeting small {
-      font-size: 11px;
-      color: #666;
+      font-size: 12px;
+      color: #6c757d;
     }
 
     .header-icons {
@@ -71,136 +81,182 @@
       gap: 12px;
     }
 
-    .notification-btn {
-      width: 48px;
-      height: 48px;
+    .notification-icon {
+      width: 44px;
+      height: 44px;
       background: #5BC2E7;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      position: relative;
-    }
-
-    .notification-btn i {
-      color: white;
-      font-size: 22px;
-    }
-
-    .points-badge {
-      background: white;
-      border-radius: 25px;
-      padding: 6px 16px 6px 6px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .coin-icon {
-      width: 36px;
-      height: 36px;
-      background: #FFD700;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .notification-icon:hover {
+      background: #4facfe;
+      transform: scale(1.05);
+    }
+
+    .notification-icon i {
+      font-size: 20px;
       color: white;
-      font-size: 14px;
+    }
+
+    .points-badge {
+      background: white;
+      border: 2px solid #5BC2E7;
+      border-radius: 25px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .coin-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
     }
 
     .points-text {
       font-size: 14px;
-      font-weight: 600;
-      color: #000;
+      font-weight: 700;
+      color: #2c3e50;
     }
 
-    .dealer-card {
+    .main-content-wrapper {
+      padding: 20px 16px 100px 16px;
+      min-height: calc(100vh - 180px);
+    }
+
+    /* Welcome Section */
+    .welcome {
+      margin-bottom: 24px;
+    }
+
+    .welcome-dealer {
+      margin-bottom: 24px;
+    }
+
+    /* Card styling matching blade */
+    .card {
+      margin-bottom: 20px;
       background: white;
-      border-radius: 20px;
-      margin: 16px;
-      padding: 20px;
+      border: none;
+      border-radius: 15px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .card-body {
+      padding: 20px;
       position: relative;
-      overflow: hidden;
+    }
+
+    .stretch {
+      width: 100%;
     }
 
     .dealer-info {
       position: relative;
       z-index: 2;
+      height: 80px;
     }
 
     .dealer-info p {
       margin: 0;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.7;
       color: #333;
     }
 
-    .dealer-image {
+    .school-img {
       position: absolute;
       right: 0;
       bottom: 0;
-      width: 180px;
-      height: 180px;
-      background: linear-gradient(135deg, #5BC2E7 0%, #4facfe 100%);
-      border-radius: 50% 0 0 0;
+      width: 200px;
+      height: 100%;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 48px;
-      opacity: 0.15;
+      align-items: flex-end;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+
+    .school-img img {
+      width: auto;
+      height: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      object-position: right bottom;
     }
 
     .section-title {
       font-size: 20px;
       font-weight: 700;
       color: #5BC2E7;
-      padding: 0 16px;
-      margin-bottom: 16px;
-      margin-top: 24px;
+      margin-bottom: 8px;
     }
 
     .show-entries {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      padding: 0 16px;
       margin-bottom: 16px;
       gap: 8px;
     }
 
+    .show-entries label,
     .show-entries span {
-      font-size: 13px;
-      color: #666;
+      font-size: 14px;
+      color: #6c757d;
+      margin-bottom: 0;
     }
 
     .show-entries select {
       border: 1px solid #ddd;
       border-radius: 6px;
       padding: 4px 8px;
-      font-size: 13px;
+      font-size: 14px;
       outline: none;
+      width: auto;
+      min-width: 80px;
+    }
+
+    /* Transaction Cards - FIXED */
+    .transaction-card {
+      background: transparent;
+    }
+
+    .transaction-list {
+      max-height: 500px;
+      overflow-y: auto;
     }
 
     .transaction-item {
       background: white;
       border-radius: 20px;
-      margin: 0 16px 12px 16px;
+      margin-bottom: 12px;
       padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      gap: 12px;
     }
 
     .transaction-left {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex: 1;
+      min-width: 0;
     }
 
     .user-avatar {
@@ -214,6 +270,26 @@
       color: white;
       font-weight: 700;
       font-size: 20px;
+      flex-shrink: 0;
+      border: 2px solid #e2e8f0;
+    }
+
+    .avatar-circle {
+      width: 55px;
+      height: 55px;
+    }
+
+    .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e2e8f0;
+    }
+
+    .transaction-details {
+      flex: 1;
+      min-width: 0;
     }
 
     .transaction-details h6 {
@@ -221,11 +297,14 @@
       font-weight: 700;
       color: #000;
       margin: 0 0 4px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .transaction-details p {
       font-size: 12px;
-      color: #666;
+      color: #6c757d;
       margin: 0;
     }
 
@@ -240,8 +319,96 @@
       font-size: 16px;
       font-weight: 700;
       color: white;
+      flex-shrink: 0;
     }
 
+    /* Sync Button Styles */
+    .sync-btn {
+      background: linear-gradient(135deg, #5BC2E7 0%, #4facfe 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(91, 194, 231, 0.3);
+      margin-bottom: 16px;
+    }
+
+    .sync-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(91, 194, 231, 0.4);
+    }
+
+    .sync-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .sync-btn i {
+      font-size: 18px;
+    }
+
+    .sync-btn.syncing i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .sync-status {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .sync-status .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sync-status .status-item:last-child {
+      border-bottom: none;
+    }
+
+    .sync-status .label {
+      font-size: 13px;
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    .sync-status .value {
+      font-size: 14px;
+      color: #2c3e50;
+      font-weight: 600;
+    }
+
+    .sync-status .value.success {
+      color: #28a745;
+    }
+
+    .sync-status .value.error {
+      color: #dc3545;
+    }
+
+    .sync-status .value.pending {
+      color: #ffc107;
+    }
+
+    /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -316,7 +483,7 @@
 
     .network-status {
       position: fixed;
-      top: 10px;
+      top: 90px;
       right: 10px;
       padding: 6px 12px;
       border-radius: 20px;
@@ -338,16 +505,41 @@
       display: block;
     }
 
-    .loading-skeleton {
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200% 100%;
-      animation: loading 1.5s infinite;
-      border-radius: 8px;
-    }
+    /* Responsive */
+    @media (max-width: 576px) {
+      .main-content-wrapper {
+        padding: 15px 12px 100px 12px;
+      }
 
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+      .school-img {
+        width: 140px !important;
+        max-height: 100px;
+      }
+      
+      .school-img img {
+        max-height: 100px;
+      }
+
+      .form-select-sm {
+        font-size: 0.875rem;
+      }
+
+      .top-header {
+        padding: 12px;
+        height: 70px;
+      }
+
+      .user-greeting h6 {
+        font-size: 16px;
+      }
+
+      .points-badge {
+        padding: 6px 12px;
+      }
+
+      .points-text {
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -371,38 +563,85 @@
     </div>
   </div>
 
-  <!-- Dealer Card -->
-  <div class="dealer-card">
-    <div class="dealer-info" id="dealerInfo">
-      <p><strong>Dealer ID:</strong> N/A</p>
-      <p><strong>Name:</strong> N/A</p>
-      <p><strong>Contact No.:</strong> N/A</p>
-      <p><strong>Registered:</strong> N/A</p>
-    </div>
-    <div class="dealer-image">
-      <i class="bi bi-person-circle"></i>
-    </div>
-  </div>
+  <!-- Main Content Wrapper -->
+  <div class="main-content-wrapper">
+    <!-- Welcome Section for Dealer -->
+    <section class="welcome welcome-dealer">
+      <div class="row">    
+        <div class="col-lg-10 col-xl-12 text-left mb-4">
+          <div class="card w-100 stretch">
+            <div class="card-body">
+              <div class="dealer-info" id="dealerInfo">
+                <p><strong>Dealer ID:</strong> N/A</p>
+                <p><strong>Name:</strong> N/A</p>
+                <p><strong>Contact No.:</strong> N/A</p>
+                <p><strong>Registered:</strong> N/A</p>
+              </div>
+              <div class="school-img">
+                <img src="../images/background.png" alt="Role Selection Context" class="img-fluid">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <!-- Latest Transaction -->
-  <h2 class="section-title">Latest Transaction</h2>
+      <!-- Sync Button and Status -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <button class="sync-btn d-none" id="syncButton" onclick="syncOfflineTransactions()">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <span>Sync Offline Transactions</span>
+          </button>
+          
+          <div class="sync-status d-none" id="syncStatus">
+            <div class="status-item">
+              <span class="label">Pending Transactions:</span>
+              <span class="value pending" id="pendingCount">0</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Synced Successfully:</span>
+              <span class="value success" id="syncedCount">0</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Failed to Sync:</span>
+              <span class="value error" id="failedCount">0</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Last Sync:</span>
+              <span class="value" id="lastSync">Never</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <h5 class="mb-2 fw-bold section-title">Latest Transaction</h5>
+      
+      <div class="row mt-3">
+        <div class="col-lg-12">
+          <div class="w-100">
+            <div class="transaction-card">
+              <div class="d-flex justify-content-end align-items-center mb-3 show-entries">
+                <label for="showEntries" class="me-2">Show</label>
+                <select id="showEntries" class="form-select form-select-sm">
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span class="ms-2">entries</span>
+              </div>
 
-  <div class="show-entries">
-    <span>Show</span>
-    <select id="showEntries">
-      <option value="10" selected>10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </select>
-    <span>entries</span>
-  </div>
-
-  <!-- Transaction List -->
-  <div id="transactionList">
-    <div style="text-align: center; padding: 40px 20px; color: #999;">
-      <i class="bi bi-hourglass-split" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
-      <p>Loading transactions...</p>
-    </div>
+              <div class="transaction-list" id="transactionList">
+                <div class="text-center py-4">
+                  <i class="bi bi-hourglass-split" style="font-size: 48px; margin-bottom: 16px; display: block; color: #999;"></i>
+                  <p style="color: #6c757d;">Loading transactions...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Bottom Navigation -->

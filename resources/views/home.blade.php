@@ -329,7 +329,7 @@
             <!-- Sync Button and Status -->
             <div class="row mb-3">
                 <div class="col-12">
-                    <button class="sync-btn d-none" id="syncButton" onclick="syncOfflineTransactions()">
+                    <button class="sync-btn" id="syncButton" onclick="syncOfflineTransactions()">
                         <i class="bi bi-cloud-arrow-up"></i>
                         <span>Sync Offline Transactions</span>
                     </button>

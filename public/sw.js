@@ -22,6 +22,8 @@ const urlsToCache = [
   `${BASE_PATH}/images/context.png`,
   `${BASE_PATH}/images/logo_nya.png`,
   `${BASE_PATH}/images/aaa.png`,
+  `${BASE_PATH}/images/background.png`,
+
   
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
