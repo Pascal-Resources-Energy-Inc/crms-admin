@@ -15,6 +15,7 @@ const urlsToCache = [
   `${BASE_PATH}/offline/cart.html`,
   `${BASE_PATH}/offline/confirm_order.html`,
   `${BASE_PATH}/offline/transaction.html`,
+  `${BASE_PATH}/offline/account.html`,
   
   // Images
   `${BASE_PATH}/images/logo_sa_labas.png`,
