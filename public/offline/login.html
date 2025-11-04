@@ -1,0 +1,1475 @@
+<!-- offline/login.html -->
+<!DOCTYPE html>
+<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable" data-theme="default" data-theme-colors="default">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="">
+
+    <title>Laravel</title>
+    <link rel="shortcut icon"  href="http://localhost/images/aaa.png">
+    <link rel="icon"  href="http://localhost/images/aaa.png">
+    <meta name="csrf-token" content="">
+    <title>Laravel</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Layout config Js -->
+    <script src="http://localhost/inside_css/assets/js/layout.js"></script>
+    <!-- Bootstrap Css -->
+    <link href="http://localhost/inside_css/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <!-- Icons Css -->
+    <link href="http://localhost/inside_css/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <!-- App Css-->
+    <link href="http://localhost/inside_css/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <!-- custom Css-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link href="http://localhost/inside_css/assets/css/custom.min.css" rel="stylesheet" type="text/css" />
+ 
+    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet" type="text/css">
+    <style>
+        .loader {
+            position: fixed;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: url("http://localhost/login_css/images/loader.gif") 50% 50% no-repeat white ;
+            opacity: .8;
+            background-size:120px 120px;
+        }
+      .bg-overlay {
+		    background: linear-gradient(to right, #c3c3c3, #c3c3c3) !important;
+    		/* opacity: .9; */
+   			/* Change 5px to your desired thickness */
+		}
+        .error-text {
+    color: #FF6B6B;
+    font-size: 14px;
+    margin-top: 6px;
+    display: none;
+}
+    </style>
+    <!-- LogIN CSS -->
+  
+
+    <!-- Styles -->
+    
+</head>
+<body>
+    <div id = "loader" style="display:none;" class="loader">
+    </div>
+  
+                
+<div class="landing-page" id="landingPage" style="display: flex;">
+    <div class="landing-content">
+        <div class="landing-wrapper">
+            <div class="logo-section">
+                <img src="../images/logo_sa_labas.png" alt="GazLite Logo" class="main-logo-img">
+            </div>
+
+            <div class="illustration-section">
+                <img src="../images/human.png" alt="Easy Management Illustration" class="human-illustration">
+            </div>
+
+            <div class="tagline">
+                <p>Easy Management for your Store.</p>
+            </div>
+
+            <div class="progress-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+
+            <button class="landing-signin-button" onclick="showRoleSelection()">
+                Sign in
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="role-selection-page" id="roleSelectionPage" style="display: none;">
+    <div class="role-header">
+        <div class="header-left">
+        </div>
+    </div>
+
+    <div class="role-content">
+        <div class="role-wrapper">
+            <div class="welcome-section">
+                <h1 class="welcome-title">Welcome to Gaz Lite !</h1>
+                <p class="welcome-subtitle">Select 'Dealer' or 'Client' to get started.</p>
+            </div>
+
+            <div class="context-image-section">
+                <img src="../images/context.png" alt="Role Selection Context" class="context-image">
+            </div>
+
+            <div class="progress-dots">
+                <span class="dot"></span>
+                <span class="dot active"></span>
+                <span class="dot"></span>
+            </div>
+
+            <div class="role-buttons">
+                <!-- Dealer Button -->
+                <button class="role-button dealer-btn" onclick="selectRole('dealer')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="role-icon">
+                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Dealer
+                    <span class="selected-indicator" style="display: none;">✓</span>
+                </button>
+                
+                <!-- Client Button -->
+                <button class="role-button client-btn" onclick="selectRole('client')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="role-icon">
+                        <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M23 21V19C23 18.1645 22.7155 17.3541 22.2094 16.6977C21.7033 16.0413 20.9982 15.5735 20.2 15.3654" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Client
+                    <span class="selected-indicator" style="display: none;">✓</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="login-page" id="loginFormPage" style="display: none;">
+    <div class="login-header">
+        <div class="header-left">
+            <button type="button" class="back-btn" onclick="showRoleSelection()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1 class="page-title">Sign in</h1>
+        </div>
+        <div class="logo-container">
+            <img src="../images/logo_nya.png" alt="Logo" class="header-logo">
+        </div>
+    </div>
+
+    <div class="login-content">
+        <div class="form-container">
+            <!-- Role indicator section -->
+            <div class="role-indicator" id="roleIndicator" style="display: none;">
+                <div class="role-info">
+                    <span class="role-label">Signing in as:</span>
+                    <span class="role-name" id="selectedRoleName">User</span>
+                </div>
+            </div>
+
+            <form method="POST" onsubmit="handleOfflineLogin(event)" id="loginForm">
+                <input type="hidden" name="_token" value="">                
+                <!-- Hidden field to send selected role -->
+                <input type="hidden" name="selected_role" id="selectedRoleInput" value="">
+
+                <div class="input-group">
+                    <label for="email" class="input-label">Email or Phone Number</label>
+                    <input 
+                        id="email" 
+                        type="text" 
+                        class="form-input" 
+                        name="email" 
+                        value="" 
+                        placeholder="Email or Phone Number"
+                        required 
+                        autofocus
+                    >
+                                    </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="password">Password</label>
+                    <input 
+                        id="password" 
+                        type="password" 
+                        class="form-input" 
+                        placeholder="At least 8 characters" 
+                        name="password" 
+                        required
+                    >
+                                    </div>
+
+                
+                <button class="signin-button" type="submit" id="signinButton">
+                    Sign in
+                </button>
+
+                <div class="forgot-section">
+                    <a href="http://localhost/password/reset" class="forgot-link">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <div class="progress-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot active"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #ffffff;
+}
+
+.landing-page {
+    min-height: 100vh;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+.landing-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+}
+
+.landing-wrapper {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.logo-section {
+    margin-bottom: 40px;
+}
+
+.main-logo-img {
+    max-width: 549px;
+    width: 100%;
+    max-height: 186px;
+    height: 100%;
+}
+
+.illustration-section {
+    margin-bottom: 30px;
+}
+
+.human-illustration {
+    max-width: 256.42px;
+    width: 100%;
+    max-height: 284px;
+    height: auto;
+}
+
+.tagline {
+    margin-bottom: 30px;
+}
+
+.tagline p {
+    font-size: 18px;
+    color: #666666;
+    font-weight: 400;
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 40px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #E0E0E0;
+    transition: background-color 0.3s ease;
+}
+
+.dot.active {
+    background-color: #5DADE2;
+}
+
+.landing-signin-button {
+    max-width: 327px;
+    width: 100%;
+    height: 57px;
+    border: none;
+    border-radius: 28px;
+    background-color: #5DADE2;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.landing-signin-button:hover {
+    background-color: #3498DB;
+    transform: translateY(-2px);
+}
+
+.role-selection-page {
+    min-height: 100vh;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+.role-header {
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+    background-color: #ffffff;
+}
+
+.role-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    margin-top: -80px;
+}
+
+.role-wrapper {
+    width: 100%;
+    max-width: 350px;
+    text-align: center;
+}
+
+.welcome-section {
+    margin-bottom: 20px;
+}
+
+.welcome-title {
+    font-size: 24px;
+    color: #4A5568;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.welcome-subtitle {
+    font-size: 14px;
+    color: #666666;
+    font-weight: 400;
+}
+
+.context-image-section {
+    margin-bottom: 25px;
+}
+
+.context-image {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+}
+
+.role-selection-page .progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 25px;
+}
+
+.role-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.role-button {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 24px;
+    background-color: #5DADE2;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.role-button:hover {
+    background-color: #3498DB;
+    transform: translateY(-2px);
+}
+
+/* New styles for role selection indication */
+.role-button.selected {
+    opacity: 0.8;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #5DADE2;
+}
+
+.selected-indicator {
+    position: absolute;
+    right: 15px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.role-icon {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+}
+
+/* Continue button styles */
+.continue-section {
+    margin-bottom: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.continue-section.show {
+    opacity: 1;
+}
+
+.continue-button {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 24px;
+    background-color: #5DADE2;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.continue-button:hover {
+    background-color: #3498DB;
+    transform: translateY(-2px);
+}
+
+.create-account-section {
+    margin-bottom: 15px;
+}
+
+.create-account-link {
+    color: #5DADE2;
+    text-decoration: underline;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.create-account-link:hover {
+    color: #3498DB;
+}
+
+.login-page {
+    min-height: 100vh;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background-color: #ffffff;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: #5DADE2;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    z-index: 10;
+    position: relative;
+}
+
+.back-btn:hover {
+    background-color: #3498DB;
+}
+
+.page-title {
+    margin-top: 7px;
+    margin-left: 20px;
+    font-size: 27px;
+    font-weight: 550;
+    color: #5DADE2;
+    letter-spacing: 1px;
+}
+
+.logo-container {
+    width: 60px;
+    height: 60px;
+}
+
+.header-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.login-content {
+    margin-top: -57px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Role indicator in login form */
+.role-indicator {
+    background-color: #F0F8FF;
+    border-left: 4px solid #5DADE2;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.role-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-label {
+    font-size: 14px;
+    color: #666666;
+}
+
+.role-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #5DADE2;
+}
+
+.input-group {
+    margin-bottom: 24px;
+}
+
+.input-label {
+    display: block;
+    font-size: 16px;
+    color: #666666;
+    margin-bottom: 8px;
+    font-weight: 400;
+}
+
+.form-input {
+    width: 100%;
+    height: 56px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 12px !important;
+    background-color: #F5F5F5;
+    font-size: 16px;
+    color: #333333;
+    outline: none;
+    transition: background-color 0.2s ease;
+}
+
+.form-input::placeholder {
+    color: #AAAAAA;
+    font-size: 16px;
+}
+
+.form-input:focus {
+    background-color: #EEEEEE;
+}
+
+.form-input.error {
+    background-color: #FFE5E5;
+    border: 1px solid #FF6B6B;
+}
+
+.error-text {
+    color: #FF6B6B;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.otp-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.otp-text {
+    font-size: 16px;
+    color: #666666;
+}
+
+.email-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    background-color: #5DADE2;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.email-btn:hover {
+    background-color: #3498DB;
+}
+
+.email-icon {
+    width: 16px;
+    height: 16px;
+    stroke: white;
+    fill: none;
+}
+
+.signin-button {
+    width: 100%;
+    height: 56px;
+    border: none;
+    border-radius: 12px;
+    background-color: #5DADE2;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: background-color 0.2s ease;
+}
+
+.signin-button:hover {
+    background-color: #3498DB;
+}
+
+.forgot-section {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.forgot-link {
+    color: #5DADE2;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.alert-error {
+    background-color: #FFE5E5;
+    color: #FF6B6B;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid #FF6B6B;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+@media (max-width: 480px) {
+    .login-header, .role-header {
+        padding: 16px 20px;
+    }
+    
+    .landing-content, .login-content, .role-content {
+        padding: 0 20px;
+    }
+    
+    .main-logo-img {
+        max-width: 200px;
+    }
+    
+    .human-illustration {
+        max-width: 160px;
+    }
+    
+    .context-image {
+        max-width: 180px;
+    }
+    
+    .tagline p {
+        font-size: 16px;
+    }
+    
+    .welcome-title {
+        font-size: 22px;
+    }
+    
+    .welcome-subtitle {
+        font-size: 13px;
+    }
+    
+    .header-left {
+        gap: 12px;
+    }
+    
+    .page-title {
+        font-size: 18px;
+    }
+    
+    .form-input, .signin-button {
+        height: 52px;
+    }
+    
+    .role-button {
+        height: 44px;
+        font-size: 15px;
+    }
+    
+    .role-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .role-content {
+        margin-top: -60px;
+    }
+    
+    .role-wrapper {
+        max-width: 320px;
+    }
+}
+</style>
+
+<script>
+let currentRole = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    const hasErrors = document.querySelector('.error-text') || document.querySelector('.alert-error');
+    const selectedRoleInput = document.getElementById('selectedRoleInput');
+    
+    if (hasErrors && selectedRoleInput && selectedRoleInput.value) {
+        currentRole = selectedRoleInput.value;
+        updateLoginFormRole();
+    }
+});
+
+function showRoleSelection() {
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('roleSelectionPage').style.display = 'flex';
+    document.getElementById('loginFormPage').style.display = 'none';
+    
+    currentRole = '';
+    clearRoleSelection();
+    clearAllErrors();
+}
+
+function selectRole(role) {
+    // Capitalize first letter to match database format (Client, Dealer, Admin)
+    currentRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+    
+    clearRoleSelection();
+    clearAllErrors();
+    
+    const selectedButton = document.querySelector(`.${role}-btn`);
+    const checkmark = selectedButton.querySelector('.selected-indicator');
+    
+    selectedButton.classList.add('selected');
+    checkmark.style.display = 'inline';
+    
+    setTimeout(() => {
+        showLoginForm();
+    }, 300);
+}
+
+function clearRoleSelection() {
+    document.querySelectorAll('.role-button').forEach(button => {
+        button.classList.remove('selected');
+        const checkmark = button.querySelector('.selected-indicator');
+        if (checkmark) {
+            checkmark.style.display = 'none';
+        }
+    });
+}
+
+function clearAllErrors() {
+    document.querySelectorAll('.error-text').forEach(error => {
+        error.style.display = 'none';
+    });
+    
+    document.querySelectorAll('.alert-error').forEach(alert => {
+        alert.style.display = 'none';
+    });
+    
+    document.querySelectorAll('.form-input.error').forEach(input => {
+        input.classList.remove('error');
+        input.style.backgroundColor = '#F5F5F5';
+        input.style.border = 'none';
+    });
+    
+    document.querySelectorAll('.form-input').forEach(input => {
+        if (input.name !== 'selected_role') {
+            input.value = '';
+        }
+    });
+    
+    const selectedRoleInput = document.getElementById('selectedRoleInput');
+    if (selectedRoleInput) {
+        selectedRoleInput.value = '';
+    }
+}
+
+function showLoginForm() {
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('roleSelectionPage').style.display = 'none';
+    document.getElementById('loginFormPage').style.display = 'flex';
+    
+    updateLoginFormRole();
+}
+
+function updateLoginFormRole() {
+    const roleIndicator = document.getElementById('roleIndicator');
+    const roleName = document.getElementById('selectedRoleName');
+    const signinButton = document.getElementById('signinButton');
+    const selectedRoleInput = document.getElementById('selectedRoleInput');
+    
+    if (currentRole) {
+        roleIndicator.style.display = 'block';
+        roleName.textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+        signinButton.textContent = `Sign in`;
+        
+        selectedRoleInput.value = currentRole;
+    }
+}
+
+function showLandingPage() {
+    document.getElementById('loginFormPage').style.display = 'none';
+    document.getElementById('roleSelectionPage').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'flex';
+    
+    currentRole = '';
+    clearAllErrors();
+}
+</script>
+
+<script>
+// =============================================================
+// UPDATED INDEXEDDB LOGIN VALIDATION SCRIPT
+// Uses CRMSDB database with 'users' store
+// =============================================================
+
+const DB_NAME = 'CRMSDB'; // Changed from 'user_crms' to 'CRMSDB'
+const STORE_NAME = 'users';
+let db;
+
+// Initialize IndexedDB - Connect to existing CRMSDB
+async function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 3);
+        
+        request.onerror = () => reject(request.error);
+        
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('✅ Connected to CRMSDB database version', db.version);
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            const oldVersion = e.oldVersion;
+            
+            console.log(`📦 Upgrading database from version ${oldVersion} to 2`);
+            
+            // Create all 4 object stores if they don't exist
+            if (!database.objectStoreNames.contains('users')) {
+                const userStore = database.createObjectStore('users', { keyPath: 'id' });
+                userStore.createIndex('email', 'email', { unique: false });
+                userStore.createIndex('role', 'role', { unique: false });
+                userStore.createIndex('name', 'name', { unique: false });
+            }
+            
+            if (!database.objectStoreNames.contains('clients')) {
+                database.createObjectStore('clients', { keyPath: 'id' });
+            }
+            
+            if (!database.objectStoreNames.contains('dealers')) {
+                database.createObjectStore('dealers', { keyPath: 'id' });
+            }
+            
+            if (!database.objectStoreNames.contains('transaction_details')) {
+                database.createObjectStore('transaction_details', { keyPath: 'id' });
+            }
+            
+            console.log('✅ All stores created/verified');
+        };
+    });
+}
+
+// Find user by email or phone in IndexedDB
+async function findUserByEmailOrPhone(input) {
+    try {
+        if (!db) await initDB();
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        
+        return new Promise((resolve, reject) => {
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const users = request.result;
+                console.log(`📊 Total users in CRMSDB: ${users.length}`);
+                
+                // Search by email or phone (handle empty/null values)
+                const user = users.find(u => {
+                    const userEmail = (u.email || '').toLowerCase().trim();
+                    const inputLower = (input || '').toLowerCase().trim();
+                    const userPhone = (u.phone || '').trim();
+                    
+                    return userEmail === inputLower || 
+                           (userPhone && userPhone === input);
+                });
+                
+                if (user) {
+                    console.log('✅ User found:', user.name);
+                } else {
+                    console.log('❌ No user found with email/phone:', input);
+                }
+                
+                resolve(user);
+            };
+            
+            request.onerror = () => {
+                console.error('❌ Error reading from CRMSDB:', request.error);
+                reject(request.error);
+            };
+        });
+    } catch (error) {
+        console.error('❌ Error finding user:', error);
+        return null;
+    }
+}
+
+// Validate bcrypt password using bcrypt.js library
+async function validatePassword(inputPassword, storedHash) {
+    try {
+        console.log('🔒 Validating password...');
+        console.log('   Input password length:', inputPassword.length);
+        console.log('   Stored hash:', storedHash ? storedHash.substring(0, 20) + '...' : 'NULL');
+        
+        // Check if stored hash is empty or null
+        if (!storedHash || storedHash === '') {
+            console.warn('⚠️ User has no password hash in database');
+            return false;
+        }
+        
+        // Check if bcrypt library is loaded
+        if (typeof dcodeIO !== 'undefined' && typeof dcodeIO.bcrypt !== 'undefined') {
+            console.log('✅ Using bcrypt.js for password validation');
+            const bcrypt = dcodeIO.bcrypt;
+            const result = await bcrypt.compare(inputPassword, storedHash);
+            console.log('   Bcrypt comparison result:', result);
+            return result;
+        } else {
+            console.warn('⚠️ Bcrypt library not loaded, using fallback validation');
+            // TEMPORARY FALLBACK: Accept any password with 8+ characters
+            // THIS IS INSECURE - Only for testing purposes
+            const result = inputPassword.length >= 8;
+            console.log('   Fallback validation result:', result);
+            return result;
+        }
+    } catch (error) {
+        console.error('❌ Password validation error:', error);
+        // Fallback validation for testing
+        return inputPassword.length >= 8;
+    }
+}
+
+// Handle form submission with IndexedDB validation
+async function handleOfflineLogin(event) {
+    event.preventDefault();
+    
+    // Show loader
+    const loader = document.getElementById('loader');
+    if (loader) loader.style.display = 'flex';
+    
+    // Get form values
+    const emailInput = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const selectedRole = document.getElementById('selectedRoleInput').value;
+    
+    console.log('=== OFFLINE LOGIN ATTEMPT (CRMSDB) ===');
+    console.log('📧 Email/Phone:', emailInput);
+    console.log('🔑 Password length:', password.length);
+    console.log('👤 Selected role:', selectedRole);
+    
+    // Clear previous errors
+    clearAllErrors();
+    
+    try {
+        // Initialize DB if needed
+        if (!db) await initDB();
+        
+        // Find user by email or phone in CRMSDB
+        const user = await findUserByEmailOrPhone(emailInput);
+        
+        if (!user) {
+            // User not found
+            showError('email', 'These credentials do not match our records.');
+            if (loader) loader.style.display = 'none';
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: 'No account found with this email or phone number.',
+                confirmButtonColor: '#5DADE2'
+            });
+            return;
+        }
+        
+        console.log('✅ User found in CRMSDB');
+        console.log('   Name:', user.name);
+        console.log('   Email:', user.email);
+        console.log('   Role:', user.role);
+        
+        // Validate role match (case-insensitive comparison)
+        if (selectedRole) {
+            const userRole = (user.role || '').trim();
+            const normalizedUserRole = userRole.toLowerCase();
+            const normalizedSelectedRole = selectedRole.toLowerCase();
+            
+            console.log('🔍 Comparing roles:');
+            console.log('   User role (normalized):', normalizedUserRole);
+            console.log('   Selected role (normalized):', normalizedSelectedRole);
+            
+            if (normalizedUserRole !== normalizedSelectedRole) {
+                if (loader) loader.style.display = 'none';
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Role Mismatch',
+                    html: `This account is registered as <strong>${userRole}</strong>.<br><br>Please select <strong>${userRole}</strong> to continue.`,
+                    confirmButtonColor: '#5DADE2'
+                });
+                return;
+            }
+        }
+        
+        console.log('✅ Role validation passed');
+        
+        // Validate password
+        const isValidPassword = await validatePassword(password, user.password);
+        
+        console.log('🔒 Password validation result:', isValidPassword);
+        
+        if (!isValidPassword) {
+            showError('password', 'Invalid password.');
+            if (loader) loader.style.display = 'none';
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: 'The password you entered is incorrect.',
+                confirmButtonColor: '#5DADE2'
+            });
+            return;
+        }
+        
+        console.log('✅ Login successful!');
+        
+        // Successful login
+        if (loader) loader.style.display = 'none';
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Login Successful!',
+            text: `Welcome back, ${user.name}!`,
+            timer: 2000,
+            showConfirmButton: false
+        }).then(() => {
+            // FIXED: Store session in BOTH formats
+            // Format 1: Individual keys (for home.html)
+            localStorage.setItem('current_user_id', user.id.toString());
+            localStorage.setItem('current_user_role', user.role);
+            localStorage.setItem('current_user_name', user.name);
+            localStorage.setItem('current_user_email', user.email);
+            
+            // Format 2: Full user object (for backward compatibility)
+            localStorage.setItem('offlineUser', JSON.stringify({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                address: user.address || '',
+                phone: user.phone || '',
+                loginTime: new Date().toISOString()
+            }));
+            
+            console.log('💾 Session stored in localStorage');
+            console.log('   current_user_id:', user.id);
+            console.log('   current_user_role:', user.role);
+            console.log('   current_user_name:', user.name);
+            
+            // Redirect based on role
+            redirectToDashboard(user.role);
+        });
+        
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        if (loader) loader.style.display = 'none';
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Error',
+            html: `An error occurred during login.<br><small>${error.message}</small>`,
+            confirmButtonColor: '#5DADE2'
+        });
+    }
+}
+
+// Show error message
+function showError(fieldId, message) {
+    const inputElement = document.getElementById(fieldId);
+    
+    if (inputElement) {
+        inputElement.classList.add('error');
+        inputElement.style.backgroundColor = '#FFE5E5';
+        inputElement.style.border = '1px solid #FF6B6B';
+    }
+    
+    // Create or update error message
+    let errorElement = document.getElementById(fieldId + 'Error');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.id = fieldId + 'Error';
+        errorElement.className = 'error-text';
+        errorElement.style.color = '#FF6B6B';
+        errorElement.style.fontSize = '14px';
+        errorElement.style.marginTop = '6px';
+        if (inputElement && inputElement.parentNode) {
+            inputElement.parentNode.appendChild(errorElement);
+        }
+    }
+    
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
+// Clear all errors
+function clearAllErrors() {
+    document.querySelectorAll('.error-text').forEach(error => {
+        error.style.display = 'none';
+        error.textContent = '';
+    });
+    
+    document.querySelectorAll('.form-input').forEach(input => {
+        input.classList.remove('error');
+        input.style.backgroundColor = '#F5F5F5';
+        input.style.border = 'none';
+    });
+}
+
+// Redirect to dashboard based on role
+function redirectToDashboard(role) {
+    // No base path needed for offline files
+    const roleUpper = (role || '').toUpperCase();
+    
+    console.log('🔄 Redirecting to dashboard for role:', roleUpper);
+    
+    // All roles go to home.html in offline mode
+    window.location.href = 'home.html';
+}
+
+// Logout function
+function logoutOfflineUser() {
+    localStorage.removeItem('offlineUser');
+    Swal.fire({
+        icon: 'success',
+        title: 'Logged Out',
+        text: 'You have been logged out successfully.',
+        timer: 1500,
+        showConfirmButton: false
+    }).then(() => {
+        const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+        window.location.href = `${basePath}/offline/login.html`;
+    });
+}
+
+// Check if user is authenticated
+function isAuthenticated() {
+    const offlineUser = localStorage.getItem('offlineUser');
+    return offlineUser !== null;
+}
+
+// Get current user
+function getCurrentUser() {
+    const offlineUser = localStorage.getItem('offlineUser');
+    return offlineUser ? JSON.parse(offlineUser) : null;
+}
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await initDB();
+        console.log('✅ CRMSDB initialized and ready for offline login');
+        
+        // Check if user is already logged in
+        const offlineUser = localStorage.getItem('offlineUser');
+        if (offlineUser) {
+            const userData = JSON.parse(offlineUser);
+            console.log('👤 User session found:', userData.name);
+        }
+        
+        // Count users in database
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const countRequest = store.count();
+        
+        countRequest.onsuccess = () => {
+            const userCount = countRequest.result;
+            console.log(`📊 CRMSDB contains ${userCount} users`);
+            
+            if (userCount === 0) {
+                console.warn('⚠️ No users in CRMSDB database.');
+                console.warn('⚠️ Please ensure data is synced from the main app.');
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No User Data',
+                    html: 'No users found in offline database.<br><br>Please connect to the internet and visit the main app to sync data.',
+                    confirmButtonColor: '#5DADE2'
+                });
+            } else {
+                // List first 5 users for debugging
+                const getAllRequest = store.getAll();
+                getAllRequest.onsuccess = () => {
+                    const users = getAllRequest.result.slice(0, 5);
+                    console.log('👥 Sample users in database:');
+                    users.forEach(u => {
+                        console.log(`   - ${u.name} (${u.email}) [${u.role}]`);
+                    });
+                };
+            }
+        };
+        
+        // Check if bcrypt is loaded
+        if (typeof dcodeIO !== 'undefined' && typeof dcodeIO.bcrypt !== 'undefined') {
+            console.log('✅ Bcrypt library loaded successfully');
+        } else {
+            console.warn('⚠️ Bcrypt library not found. Using fallback password validation.');
+            console.warn('⚠️ Any password with 8+ characters will be accepted (INSECURE)');
+        }
+    } catch (error) {
+        console.error('❌ Error initializing CRMSDB:', error);
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Database Error',
+            text: 'Failed to initialize offline database. Please refresh the page.',
+            confirmButtonColor: '#5DADE2'
+        });
+    }
+});
+</script>
+
+
+    </div>
+
+    
+    <script src="http://localhost/inside_css/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="http://localhost/inside_css/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="http://localhost/inside_css/assets/libs/node-waves/waves.min.js"></script>
+    <script src="http://localhost/inside_css/assets/libs/feather-icons/feather.min.js"></script>
+    <script src="http://localhost/inside_css/assets/js/pages/plugins/lord-icon-2.1.0.js"></script>
+    <script src="http://localhost/inside_css/assets/js/plugins.js"></script>
+
+    <!-- particles js -->
+    <script src="http://localhost/inside_css/assets/libs/particles.js/particles.js"></script>
+    <!-- particles app js -->
+    <script src="http://localhost/inside_css/assets/js/pages/particles.app.js"></script>
+    <!-- password-addon init -->
+    <script src="http://localhost/inside_css/assets/js/pages/password-addon.init.js"></script>
+  <script>
+// =============================================================
+// COMPLETE <script> SECTION FOR offline/login.html
+// Replace everything after the closing </div> tag
+// =============================================================
+
+// Check online/offline status
+window.addEventListener('online', () => {
+  console.log('🌐 You are online');
+  document.body.classList.remove('offline-mode');
+  
+  // Show notification and redirect to online login
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener('mouseenter', Swal.stopTimer);
+      toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
+  });
+
+  Toast.fire({
+    icon: 'success',
+    title: 'Connection Restored!',
+    text: 'Redirecting to login...'
+  }).then(() => {
+    // Redirect to main login page
+    const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+    window.location.href = `${basePath}/login`;
+  });
+});
+
+window.addEventListener('offline', () => {
+  console.log('📵 You are offline');
+  document.body.classList.add('offline-mode');
+});
+
+// SweetAlert Functions
+function showOfflineChoiceDialog() {
+  Swal.fire({
+    icon: 'warning',
+    title: 'You\'re Offline',
+    html: `
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        You are currently offline due to weak or no network connection.
+      </p>
+      <p style="font-size: 14px; color: #666;">
+        You can still view this page or wait for connection to restore.
+      </p>
+    `,
+    confirmButtonText: 'OK',
+    confirmButtonColor: '#5DADE2'
+  });
+}
+
+function retryConnection() {
+  Swal.fire({
+    title: 'Checking Connection...',
+    html: 'Please wait while we check your internet connection.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  // Try to fetch a small resource to check connection
+  fetch('https://www.google.com/favicon.ico', { 
+    mode: 'no-cors',
+    cache: 'no-store'
+  })
+    .then(() => {
+      // Connection successful - redirect to online login
+      Swal.fire({
+        icon: 'success',
+        title: 'Connected!',
+        text: 'Redirecting to login page...',
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        // Redirect to main login page
+        const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+        window.location.href = `${basePath}/login`;
+      });
+    })
+    .catch(() => {
+      // Still offline
+      Swal.fire({
+        icon: 'error',
+        title: 'Still Offline',
+        text: 'Unable to connect to the internet. Please check your connection.',
+        confirmButtonText: 'Try Again',
+        showDenyButton: true,
+        denyButtonText: 'Stay on This Page',
+        confirmButtonColor: '#5DADE2',
+        denyButtonColor: '#95a5a6'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          retryConnection();
+        }
+      });
+    });
+}
+
+// Add offline mode styles
+const offlineStyles = document.createElement('style');
+offlineStyles.textContent = `
+  .offline-mode {
+    filter: grayscale(20%);
+  }
+  
+  .offline-mode::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #FF9800, #FF5722);
+    z-index: 10000;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  .offline-choice-popup {
+    border-radius: 15px;
+  }
+  
+  .swal2-icon.swal2-warning {
+    border-color: #FF9800;
+    color: #FF9800;
+  }
+`;
+document.head.appendChild(offlineStyles);
+  </script>
+</body>
+</html>
