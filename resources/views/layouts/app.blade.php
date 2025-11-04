@@ -232,660 +232,545 @@
     <script src="{{asset('inside_css/assets/js/pages/particles.app.js')}}"></script>
     <script src="{{asset('inside_css/assets/js/pages/password-addon.init.js')}}"></script>
 
-    @auth
+    <!-- IndexedDB Management Script -->
     <script>
-    // Initialize IndexedDB for Laravel CRMS
-    function initCRMSDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('CRMSDB', 3);
-            
-            request.onupgradeneeded = function(event) {
-                const db = event.target.result;
-                
-                if (!db.objectStoreNames.contains('users')) {
-                    db.createObjectStore('users', { keyPath: 'id' });
-                }
-                
-                if (!db.objectStoreNames.contains('dealers')) {
-                    db.createObjectStore('dealers', { keyPath: 'id' });
-                }
-                
-                if (!db.objectStoreNames.contains('clients')) {
-                    db.createObjectStore('clients', { keyPath: 'id' });
-                }
-                
-                if (!db.objectStoreNames.contains('transaction_details')) {
-                    db.createObjectStore('transaction_details', { keyPath: 'id' });
-                }
-                
-                if (!db.objectStoreNames.contains('stoves')) {
-                    db.createObjectStore('stoves', { keyPath: 'id' });
-                }
-                
-                if (!db.objectStoreNames.contains('items')) {
-                    db.createObjectStore('items', { keyPath: 'id' });
-                }
-            };
-            
-            request.onsuccess = function(event) {
-                resolve(event.target.result);
-            };
-            
-            request.onerror = function(event) {
-                reject('IndexedDB error: ' + event.target.error);
-            };
-        });
-    }
+// Initialize IndexedDB for Laravel CRMS
+function initCRMSDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('CRMSDB', 3);
+    
+    request.onupgradeneeded = function(event) {
+      const db = event.target.result;
+      
+      // Create users store if it doesn't exist
+      if (!db.objectStoreNames.contains('users')) {
+        db.createObjectStore('users', { keyPath: 'id' });
+      }
+      
+      // Create dealers store if it doesn't exist
+      if (!db.objectStoreNames.contains('dealers')) {
+        db.createObjectStore('dealers', { keyPath: 'id' });
+      }
+      
+      // Create clients store if it doesn't exist
+      if (!db.objectStoreNames.contains('clients')) {
+        db.createObjectStore('clients', { keyPath: 'id' });
+      }
+      
+      // Create transaction_details store if it doesn't exist
+      if (!db.objectStoreNames.contains('transaction_details')) {
+        db.createObjectStore('transaction_details', { keyPath: 'id' });
+      }
+      
+      // Create stoves store if it doesn't exist
+      if (!db.objectStoreNames.contains('stoves')) {
+        db.createObjectStore('stoves', { keyPath: 'id' });
+      }
+      
+      // Create items store if it doesn't exist
+      if (!db.objectStoreNames.contains('items')) {
+        db.createObjectStore('items', { keyPath: 'id' });
+      }
+    };
+    
+    request.onsuccess = function(event) {
+      resolve(event.target.result);
+    };
+    
+    request.onerror = function(event) {
+      reject('IndexedDB error: ' + event.target.error);
+    };
+  });
+}
 
-    // Save users to IndexedDB
-    async function saveUsersToIndexedDB() {
-        try {
-            const response = await fetch('/api/get-users');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const users = await response.json();
-            const db = await initCRMSDB();
-            
-            const tx = db.transaction('users', 'readwrite');
-            const store = tx.objectStore('users');
-            store.clear();
-            users.forEach(user => store.put(user));
-            
-            tx.oncomplete = () => {
-                console.log('✅ Users saved to IndexedDB:', users.length, 'records');
-            };
-            
-            tx.onerror = () => {
-                console.error('❌ Error saving users to IndexedDB');
-            };
-        } catch (err) {
-            console.error('Error saving users:', err);
-        }
-    }
-
-    async function saveDealersToIndexedDB() {
-        try {
-            console.log('📡 Fetching dealers from API...');
-            const response = await fetch('/api/get-dealers');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const dealers = await response.json();
-            console.log('📥 Fetched dealers:', dealers.length);
-            
-            const cleanedDealers = dealers.map(dealer => {
-                const cleanDealer = {};
-                for (const [key, value] of Object.entries(dealer)) {
-                    cleanDealer[key] = value === null ? '' : value;
-                }
-                return cleanDealer;
-            });
-            
-            console.log('🧹 Cleaned dealers:', cleanedDealers.length);
-            
-            const db = await initCRMSDB();
-            const tx = db.transaction('dealers', 'readwrite');
-            const store = tx.objectStore('dealers');
-            
-            store.clear();
-            
-            cleanedDealers.forEach(dealer => {
-                try {
-                    store.put(dealer);
-                } catch (err) {
-                    console.error('Error saving dealer:', dealer.id, err);
-                }
-            });
-            
-            tx.oncomplete = () => {
-                console.log('✅ Dealers saved to IndexedDB:', cleanedDealers.length, 'records');
-            };
-            
-            tx.onerror = (e) => {
-                console.error('❌ Transaction error saving dealers:', e.target.error);
-            };
-            
-        } catch (err) {
-            console.error('❌ Error saving dealers:', err);
-        }
-    }
-
-    async function saveClientsToIndexedDB() {
-        try {
-            console.log('📡 Fetching clients from API...');
-            const response = await fetch('/api/get-clients');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const clients = await response.json();
-            console.log('📥 Fetched clients:', clients.length);
-            
-            const cleanedClients = clients.map(client => {
-                const cleanClient = {};
-                for (const [key, value] of Object.entries(client)) {
-                    cleanClient[key] = value === null ? '' : value;
-                }
-                return cleanClient;
-            });
-            
-            console.log('🧹 Cleaned clients:', cleanedClients.length);
-            
-            const db = await initCRMSDB();
-            const tx = db.transaction('clients', 'readwrite');
-            const store = tx.objectStore('clients');
-            
-            store.clear();
-            
-            cleanedClients.forEach(client => {
-                try {
-                    store.put(client);
-                } catch (err) {
-                    console.error('Error saving client:', client.id, err);
-                }
-            });
-            
-            tx.oncomplete = () => {
-                console.log('✅ Clients saved to IndexedDB:', cleanedClients.length, 'records');
-            };
-            
-            tx.onerror = (e) => {
-                console.error('❌ Transaction error saving clients:', e.target.error);
-            };
-            
-        } catch (err) {
-            console.error('❌ Error saving clients:', err);
-        }
-    }
-
-    async function saveTransactionsToIndexedDB() {
-        try {
-            console.log('📡 Fetching transactions from API...');
-            const response = await fetch('/api/get-transactions');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const transactions = await response.json();
-            console.log('📥 Fetched transactions:', transactions.length);
-            
-            const cleanedTransactions = transactions.map(transaction => {
-                const cleanTransaction = {};
-                for (const [key, value] of Object.entries(transaction)) {
-                    cleanTransaction[key] = value === null ? '' : value;
-                }
-                return cleanTransaction;
-            });
-            
-            console.log('🧹 Cleaned transactions:', cleanedTransactions.length);
-            
-            const db = await initCRMSDB();
-            const tx = db.transaction('transaction_details', 'readwrite');
-            const store = tx.objectStore('transaction_details');
-            
-            store.clear();
-            
-            cleanedTransactions.forEach(transaction => {
-                try {
-                    store.put(transaction);
-                } catch (err) {
-                    console.error('Error saving transaction:', transaction.id, err);
-                }
-            });
-            
-            tx.oncomplete = () => {
-                console.log('✅ Transactions saved to IndexedDB:', cleanedTransactions.length, 'records');
-            };
-            
-            tx.onerror = (e) => {
-                console.error('❌ Transaction error saving transactions:', e.target.error);
-            };
-            
-        } catch (err) {
-            console.error('❌ Error saving transactions:', err);
-        }
-    }
-
-    async function saveStovesToIndexedDB() {
-        try {
-            console.log('📡 Fetching stoves from API...');
-            const response = await fetch('/api/get-stoves');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const stoves = await response.json();
-            console.log('📥 Fetched stoves:', stoves.length);
-            
-            const cleanedStoves = stoves.map(stove => {
-                const cleanStove = {};
-                for (const [key, value] of Object.entries(stove)) {
-                    cleanStove[key] = value === null ? '' : value;
-                }
-                return cleanStove;
-            });
-            
-            console.log('🧹 Cleaned stoves:', cleanedStoves.length);
-            
-            const db = await initCRMSDB();
-            const tx = db.transaction('stoves', 'readwrite');
-            const store = tx.objectStore('stoves');
-            
-            store.clear();
-            
-            cleanedStoves.forEach(stove => {
-                try {
-                    store.put(stove);
-                } catch (err) {
-                    console.error('Error saving stove:', stove.id, err);
-                }
-            });
-            
-            tx.oncomplete = () => {
-                console.log('✅ Stoves saved to IndexedDB:', cleanedStoves.length, 'records');
-            };
-            
-            tx.onerror = (e) => {
-                console.error('❌ Transaction error saving stoves:', e.target.error);
-            };
-            
-        } catch (err) {
-            console.error('❌ Error saving stoves:', err);
-        }
-    }
-
-    async function saveItemsToIndexedDB() {
-        try {
-            console.log('📡 Fetching items from API...');
-            const response = await fetch('/api/get-items');
-            if (!response.ok) throw new Error('HTTP error ' + response.status);
-            
-            const items = await response.json();
-            console.log('📥 Fetched items:', items.length);
-            
-            const cleanedItems = items.map(item => {
-                const cleanItem = {};
-                for (const [key, value] of Object.entries(item)) {
-                    if (value === null) {
-                        cleanItem[key] = '';
-                    } else if (key === 'item_image') {
-                        cleanItem[key] = value;
-                    } else {
-                        cleanItem[key] = value;
-                    }
-                }
-                return cleanItem;
-            });
-            
-            console.log('🧹 Cleaned items:', cleanedItems.length);
-            
-            const db = await initCRMSDB();
-            const tx = db.transaction('items', 'readwrite');
-            const store = tx.objectStore('items');
-            
-            store.clear();
-            
-            cleanedItems.forEach(item => {
-                try {
-                    store.put(item);
-                } catch (err) {
-                    console.error('Error saving item:', item.id, err);
-                }
-            });
-            
-            tx.oncomplete = () => {
-                console.log('✅ Items saved to IndexedDB:', cleanedItems.length, 'records');
-            };
-            
-            tx.onerror = (e) => {
-                console.error('❌ Transaction error saving items:', e.target.error);
-            };
-            
-        } catch (err) {
-            console.error('❌ Error saving items:', err);
-        }
-    }
-
-    async function saveAllDataToIndexedDB() {
-        console.log('🔄 Starting IndexedDB sync...');
-        
-        try {
-            await saveUsersToIndexedDB();
-            await saveDealersToIndexedDB();
-            await saveClientsToIndexedDB();
-            await saveTransactionsToIndexedDB();
-            await saveStovesToIndexedDB();
-            await saveItemsToIndexedDB(); 
-            console.log('✅ IndexedDB sync completed!');
-        } catch (err) {
-            console.error('❌ IndexedDB sync failed:', err);
-        }
-    }
-
-    async function getDataFromIndexedDB(storeName) {
-        try {
-            const db = await initCRMSDB();
-            const tx = db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            
-            return new Promise((resolve, reject) => {
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        } catch (err) {
-            console.error('Error reading from IndexedDB:', err);
-            return [];
-        }
-    }
-
-    // Load data on page load - ONLY when authenticated
-    window.addEventListener('load', function() {
-        console.log('✅ User authenticated - starting data sync');
-        saveAllDataToIndexedDB();
+// Save users to IndexedDB with passwords and debugging
+async function saveUsersToIndexedDB() {
+  try {
+    console.log('📡 Fetching users from API...');
+    const response = await fetch('/api/get-users');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const users = await response.json();
+    
+    console.log('📥 Fetched users:', users.length);
+    console.log('🔐 First user data:', users[0]);
+    console.log('🔐 First user has password:', users[0]?.password ? 'YES ✅' : 'NO ❌');
+    
+    // Handle null values in the data
+    const cleanedUsers = users.map(user => {
+      const cleanUser = {};
+      for (const [key, value] of Object.entries(user)) {
+        cleanUser[key] = value === null ? '' : value;
+      }
+      return cleanUser;
     });
-    </script>
-    @endauth
+    
+    console.log('🧹 Cleaned first user:', cleanedUsers[0]);
+    console.log('🔐 Cleaned user has password:', cleanedUsers[0]?.password ? 'YES ✅' : 'NO ❌');
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('users', 'readwrite');
+    const store = tx.objectStore('users');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each user
+    cleanedUsers.forEach(user => {
+      try {
+        store.put(user);
+      } catch (err) {
+        console.error('Error saving user:', user.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Users saved to IndexedDB:', cleanedUsers.length, 'records');
+      console.log('🔐 Passwords included in sync!');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving users:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving users:', err);
+  }
+}
 
-    @guest
-    <script>
-    console.log('⏭️ Guest user - skipping data sync');
+// Save dealers to IndexedDB with null handling
+async function saveDealersToIndexedDB() {
+  try {
+    console.log('📡 Fetching dealers from API...');
+    const response = await fetch('/api/get-dealers');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const dealers = await response.json();
+    console.log('📥 Fetched dealers:', dealers.length);
+    
+    // Handle null values - convert to empty strings
+    const cleanedDealers = dealers.map(dealer => {
+      const cleanDealer = {};
+      for (const [key, value] of Object.entries(dealer)) {
+        cleanDealer[key] = value === null ? '' : value;
+      }
+      return cleanDealer;
+    });
+    
+    console.log('🧹 Cleaned dealers:', cleanedDealers.length);
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('dealers', 'readwrite');
+    const store = tx.objectStore('dealers');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each dealer
+    cleanedDealers.forEach(dealer => {
+      try {
+        store.put(dealer);
+      } catch (err) {
+        console.error('Error saving dealer:', dealer.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Dealers saved to IndexedDB:', cleanedDealers.length, 'records');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving dealers:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving dealers:', err);
+  }
+}
+
+// Save clients to IndexedDB with null handling
+async function saveClientsToIndexedDB() {
+  try {
+    console.log('📡 Fetching clients from API...');
+    const response = await fetch('/api/get-clients');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const clients = await response.json();
+    console.log('📥 Fetched clients:', clients.length);
+    
+    // Handle null values - convert to empty strings
+    const cleanedClients = clients.map(client => {
+      const cleanClient = {};
+      for (const [key, value] of Object.entries(client)) {
+        cleanClient[key] = value === null ? '' : value;
+      }
+      return cleanClient;
+    });
+    
+    console.log('🧹 Cleaned clients:', cleanedClients.length);
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('clients', 'readwrite');
+    const store = tx.objectStore('clients');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each client
+    cleanedClients.forEach(client => {
+      try {
+        store.put(client);
+      } catch (err) {
+        console.error('Error saving client:', client.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Clients saved to IndexedDB:', cleanedClients.length, 'records');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving clients:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving clients:', err);
+  }
+}
+
+// Save transactions to IndexedDB with null handling
+async function saveTransactionsToIndexedDB() {
+  try {
+    console.log('📡 Fetching transactions from API...');
+    const response = await fetch('/api/get-transactions');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const transactions = await response.json();
+    console.log('📥 Fetched transactions:', transactions.length);
+    
+    // Handle null values - convert to empty strings
+    const cleanedTransactions = transactions.map(transaction => {
+      const cleanTransaction = {};
+      for (const [key, value] of Object.entries(transaction)) {
+        cleanTransaction[key] = value === null ? '' : value;
+      }
+      return cleanTransaction;
+    });
+    
+    console.log('🧹 Cleaned transactions:', cleanedTransactions.length);
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('transaction_details', 'readwrite');
+    const store = tx.objectStore('transaction_details');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each transaction
+    cleanedTransactions.forEach(transaction => {
+      try {
+        store.put(transaction);
+      } catch (err) {
+        console.error('Error saving transaction:', transaction.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Transactions saved to IndexedDB:', cleanedTransactions.length, 'records');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving transactions:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving transactions:', err);
+  }
+}
+
+// Save stoves to IndexedDB with null handling
+async function saveStovesToIndexedDB() {
+  try {
+    console.log('📡 Fetching stoves from API...');
+    const response = await fetch('/api/get-stoves');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const stoves = await response.json();
+    console.log('📥 Fetched stoves:', stoves.length);
+    
+    // Handle null values - convert to empty strings
+    const cleanedStoves = stoves.map(stove => {
+      const cleanStove = {};
+      for (const [key, value] of Object.entries(stove)) {
+        cleanStove[key] = value === null ? '' : value;
+      }
+      return cleanStove;
+    });
+    
+    console.log('🧹 Cleaned stoves:', cleanedStoves.length);
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('stoves', 'readwrite');
+    const store = tx.objectStore('stoves');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each stove
+    cleanedStoves.forEach(stove => {
+      try {
+        store.put(stove);
+      } catch (err) {
+        console.error('Error saving stove:', stove.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Stoves saved to IndexedDB:', cleanedStoves.length, 'records');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving stoves:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving stoves:', err);
+  }
+}
+
+// Save items to IndexedDB with null handling and BLOB support
+async function saveItemsToIndexedDB() {
+  try {
+    console.log('📡 Fetching items from API...');
+    const response = await fetch('/api/get-items');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    
+    const items = await response.json();
+    console.log('📥 Fetched items:', items.length);
+    
+    // Handle null values and ensure item_image is properly formatted
+    const cleanedItems = items.map(item => {
+      const cleanItem = {};
+      for (const [key, value] of Object.entries(item)) {
+        // Convert null to empty string
+        if (value === null) {
+          cleanItem[key] = '';
+        }
+        // Keep item_image as base64 string
+        else if (key === 'item_image') {
+          cleanItem[key] = value; // Already converted to base64 in PHP
+        }
+        else {
+          cleanItem[key] = value;
+        }
+      }
+      return cleanItem;
+    });
+    
+    console.log('🧹 Cleaned items:', cleanedItems.length);
+    
+    const db = await initCRMSDB();
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    
+    // Clear existing data
+    store.clear();
+    
+    // Add each item
+    cleanedItems.forEach(item => {
+      try {
+        store.put(item);
+      } catch (err) {
+        console.error('Error saving item:', item.id, err);
+      }
+    });
+    
+    tx.oncomplete = () => {
+      console.log('✅ Items saved to IndexedDB:', cleanedItems.length, 'records');
+    };
+    
+    tx.onerror = (e) => {
+      console.error('❌ Transaction error saving items:', e.target.error);
+    };
+    
+  } catch (err) {
+    console.error('❌ Error saving items:', err);
+  }
+}
+
+// Save all data to IndexedDB
+async function saveAllDataToIndexedDB() {
+  console.log('🔄 Starting IndexedDB sync...');
+  
+  try {
+    await saveUsersToIndexedDB();
+    await saveDealersToIndexedDB();
+    await saveClientsToIndexedDB();
+    await saveTransactionsToIndexedDB();
+    await saveStovesToIndexedDB();
+    await saveItemsToIndexedDB();
+    console.log('✅ IndexedDB sync completed!');
+  } catch (err) {
+    console.error('❌ IndexedDB sync failed:', err);
+  }
+}
+
+// Optional: Utility function to read from IndexedDB
+async function getDataFromIndexedDB(storeName) {
+  try {
+    const db = await initCRMSDB();
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error('Error reading from IndexedDB:', err);
+    return [];
+  }
+}
+
+// Load data on page load
+window.addEventListener('load', saveAllDataToIndexedDB);
     </script>
-    @endguest
 
     <!-- PWA Installation Script -->
     <script>
-    let deferredPrompt;
-    let installAttempted = false;
+let deferredPrompt;
+let installAttempted = false;
 
-    function isAppInstalled() {
-        return window.matchMedia('(display-mode: standalone)').matches || 
-               window.navigator.standalone === true ||
-               localStorage.getItem('pwa-installed') === 'true';
+// Check if app is already installed
+function isAppInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone === true ||
+           localStorage.getItem('pwa-installed') === 'true';
+}
+
+// Show installed badge if running as PWA
+if (isAppInstalled()) {
+    console.log('✅ App is running as installed PWA');
+} else {
+    console.log('📱 App is running in browser - install prompt available');
+}
+
+// Capture the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('🎯 beforeinstallprompt event fired');
+    
+    // Prevent the default mini-infobar
+    e.preventDefault();
+    
+    // Store the event for later use
+    deferredPrompt = e;
+    
+    // Check if user dismissed it before
+    const dismissed = localStorage.getItem('pwa-prompt-dismissed');
+    const dismissedTime = localStorage.getItem('pwa-prompt-dismissed-time');
+    
+    // Show again after 7 days
+    const shouldShowAgain = !dismissedTime || 
+        (Date.now() - parseInt(dismissedTime)) > 7 * 24 * 60 * 60 * 1000;
+    
+    if (!dismissed || shouldShowAgain) {
+        // Show custom install prompt after 2 seconds
+        setTimeout(() => {
+            showInstallPrompt();
+        }, 2000);
+    }
+});
+
+function showInstallPrompt() {
+    const prompt = document.getElementById('pwaInstallPrompt');
+    if (prompt && !isAppInstalled()) {
+        prompt.style.display = 'block';
+        console.log('📲 Install prompt displayed');
+    }
+}
+
+async function installPWA() {
+    if (!deferredPrompt) {
+        console.log('❌ No deferred prompt available');
+        Swal.fire({
+            icon: 'info',
+            title: 'Installation Not Available',
+            text: 'The app is either already installed or your browser doesn\'t support installation.',
+            confirmButtonColor: '#5DADE2'
+        });
+        return;
     }
 
-    if (isAppInstalled()) {
-        console.log('✅ App is running as installed PWA');
-    } else {
-        console.log('📱 App is running in browser - install prompt available');
-    }
+    installAttempted = true;
+    
+    // Hide the custom prompt
+    document.getElementById('pwaInstallPrompt').style.display = 'none';
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('🎯 beforeinstallprompt event fired');
-        
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        const dismissed = localStorage.getItem('pwa-prompt-dismissed');
-        const dismissedTime = localStorage.getItem('pwa-prompt-dismissed-time');
-        
-        const shouldShowAgain = !dismissedTime || 
-            (Date.now() - parseInt(dismissedTime)) > 7 * 24 * 60 * 60 * 1000;
-        
-        if (!dismissed || shouldShowAgain) {
-            setTimeout(() => {
-                showInstallPrompt();
-            }, 2000);
-        }
-    });
+    // Show the native install prompt
+    deferredPrompt.prompt();
 
-    function showInstallPrompt() {
-        const prompt = document.getElementById('pwaInstallPrompt');
-        if (prompt && !isAppInstalled()) {
-            prompt.style.display = 'block';
-            console.log('📲 Install prompt displayed');
-        }
-    }
+    // Wait for user response
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    console.log(`👤 User response: ${outcome}`);
 
-    async function installPWA() {
-        if (!deferredPrompt) {
-            console.log('❌ No deferred prompt available');
-            Swal.fire({
-                icon: 'info',
-                title: 'Installation Not Available',
-                text: 'The app is either already installed or your browser doesn\'t support installation.',
-                confirmButtonColor: '#5DADE2'
-            });
-            return;
-        }
-
-        installAttempted = true;
-        
-        document.getElementById('pwaInstallPrompt').style.display = 'none';
-
-        deferredPrompt.prompt();
-
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        console.log(`👤 User response: ${outcome}`);
-
-        if (outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-            localStorage.setItem('pwa-installed', 'true');
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'App Installed!',
-                text: 'GazLite has been added to your home screen.',
-                timer: 3000,
-                showConfirmButton: false
-            });
-            
-            const badge = document.getElementById('pwaInstalledBadge');
-            badge.style.display = 'flex';
-            setTimeout(() => {
-                badge.style.display = 'none';
-            }, 5000);
-        } else {
-            console.log('❌ User dismissed the install prompt');
-        }
-
-        deferredPrompt = null;
-    }
-
-    function dismissInstallPrompt() {
-        document.getElementById('pwaInstallPrompt').style.display = 'none';
-        localStorage.setItem('pwa-prompt-dismissed', 'true');
-        localStorage.setItem('pwa-prompt-dismissed-time', Date.now().toString());
-        console.log('⏭️ Install prompt dismissed by user');
-    }
-
-    window.addEventListener('appinstalled', (e) => {
-        console.log('✅ PWA was successfully installed');
+    if (outcome === 'accepted') {
+        console.log('✅ User accepted the install prompt');
         localStorage.setItem('pwa-installed', 'true');
         
-        document.getElementById('pwaInstallPrompt').style.display = 'none';
+        // Show success message
+        Swal.fire({
+            icon: 'success',
+            title: 'App Installed!',
+            text: 'GazLite has been added to your home screen.',
+            timer: 3000,
+            showConfirmButton: false
+        });
         
+        // Show installed badge
         const badge = document.getElementById('pwaInstalledBadge');
         badge.style.display = 'flex';
         setTimeout(() => {
             badge.style.display = 'none';
         }, 5000);
-        
-        deferredPrompt = null;
-    });
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            const getBasePath = () => {
-                const path = window.location.pathname;
-                if (path.includes('/crms/public')) {
-                    return '/crms/public';
-                }
-                return '';
-            };
-            
-            const BASE_PATH = getBasePath();
-            const swPath = `${BASE_PATH}/sw.js`;
-            const swScope = `${BASE_PATH}/`;
-            
-            console.log('🔍 PWA Environment:');
-            console.log('   Host:', window.location.host);
-            console.log('   BASE_PATH:', BASE_PATH);
-            console.log('   SW Path:', swPath);
-            console.log('   SW Scope:', swScope);
-            console.log('   Display Mode:', window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' : 
-                                         window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
-            
-            fetch(swPath)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`sw.js not found at ${swPath} (${response.status})`);
-                    }
-                    console.log('✅ sw.js file found at:', swPath);
-                    
-                    return navigator.serviceWorker.register(swPath, { scope: swScope });
-                })
-                .then(registration => {
-                    console.log('✅ Service Worker registered successfully');
-                    console.log('   Scope:', registration.scope);
-                    console.log('   Active:', !!registration.active);
-                    
-                    setInterval(() => {
-                        registration.update();
-                    }, 60000);
-                    
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        console.log('🔄 New Service Worker found, installing...');
-                        
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('✨ New version available!');
-                                if (confirm('New version available! Reload to update?')) {
-                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                    window.location.reload();
-                                }
-                            }
-                        });
-                    });
-                })
-                .catch(error => {
-                    console.error('❌ Service Worker registration failed:', error);
-                    console.error('   Make sure sw.js exists at:', swPath);
-                    console.error('   Current page URL:', window.location.href);
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'PWA Setup Error',
-                        html: `<p>Service Worker file not found.</p>
-                               <p><strong>Expected location:</strong> <code>${swPath}</code></p>
-                               <p>Please ensure sw.js is in your public folder.</p>`,
-                        confirmButtonColor: '#5DADE2'
-                    });
-                });
-        });
-
-        navigator.serviceWorker.addEventListener('message', event => {
-            const { type } = event.data;
-            
-            switch(type) {
-                case 'OFFLINE_CHOICE_DIALOG':
-                    showOfflineChoiceDialog();
-                    break;
-                    
-                case 'ONLINE_STATUS':
-                    if (event.data.status === 'online') {
-                        showOnlineNotification();
-                    }
-                    break;
-            }
-        });
-
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('🔄 Service Worker controller changed');
-            window.location.reload();
-        });
+    } else {
+        console.log('❌ User dismissed the install prompt');
     }
 
-    window.addEventListener('online', () => {
-        console.log('🌐 You are online');
-        document.body.classList.remove('offline-mode');
-        
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ 
-                type: 'RESET_OFFLINE_STATE' 
-            });
-        }
-        
-        showOnlineNotification();
-    });
+    // Clear the deferred prompt
+    deferredPrompt = null;
+}
 
-    window.addEventListener('offline', () => {
-        console.log('📵 You are offline');
-        document.body.classList.add('offline-mode');
-        showOfflineChoiceDialog();
-    });
+function dismissInstallPrompt() {
+    document.getElementById('pwaInstallPrompt').style.display = 'none';
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
+    localStorage.setItem('pwa-prompt-dismissed-time', Date.now().toString());
+    console.log('⏭️ Install prompt dismissed by user');
+}
 
-    function showOfflineChoiceDialog() {
-        Swal.fire({
-            icon: 'warning',
-            title: 'You\'re Offline',
-            html: `
-                <p style="font-size: 16px; margin-bottom: 20px;">
-                    You are currently offline due to weak or no network connection.
-                </p>
-                <p style="font-size: 14px; color: #666;">
-                    Choose an option to continue:
-                </p>
-            `,
-            showDenyButton: true,
-            showCancelButton: false,
-            confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
-            denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
-            confirmButtonColor: '#DADE2',
-            denyButtonColor: '#95a5a6',
-            allowOutsideClick: false,
-            allowEscapeKey: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                retryConnection();
-            } else if (result.isDenied) {
-                redirectToOfflineMode();
-            }
-        });
-    }
+// Listen for successful installation
+window.addEventListener('appinstalled', (e) => {
+    console.log('✅ PWA was successfully installed');
+    localStorage.setItem('pwa-installed', 'true');
+    
+    // Hide install prompt if visible
+    document.getElementById('pwaInstallPrompt').style.display = 'none';
+    
+    // Show success notification
+    const badge = document.getElementById('pwaInstalledBadge');
+    badge.style.display = 'flex';
+    setTimeout(() => {
+        badge.style.display = 'none';
+    }, 5000);
+    
+    // Clear deferred prompt
+    deferredPrompt = null;
+});
 
-    function retryConnection() {
-        Swal.fire({
-            title: 'Checking Connection...',
-            html: 'Please wait while we check your internet connection.',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        fetch('https://www.google.com/favicon.ico', { 
-            mode: 'no-cors',
-            cache: 'no-store'
-        })
-            .then(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Connected!',
-                    text: 'Your internet connection has been restored.',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.reload();
-                });
-            })
-            .catch(() => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Still Offline',
-                    text: 'Unable to connect to the internet. Please check your connection.',
-                    confirmButtonText: 'Try Again',
-                    showDenyButton: true,
-                    denyButtonText: 'Continue Offline',
-                    confirmButtonColor: '#5DADE2',
-                    denyButtonColor: '#95a5a6'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        retryConnection();
-                    } else if (result.isDenied) {
-                        redirectToOfflineMode();
-                    }
-                });
-            });
-    }
-
-    function redirectToOfflineMode() {
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Detect the correct base path
         const getBasePath = () => {
             const path = window.location.pathname;
             if (path.includes('/crms/public')) {
@@ -894,63 +779,256 @@
             return '';
         };
         
-        const offlinePath = `${getBasePath()}/offline/login.html`;
+        const BASE_PATH = getBasePath();
+        const swPath = `${BASE_PATH}/sw.js`;
+        const swScope = `${BASE_PATH}/`;
         
-        Swal.fire({
-            icon: 'info',
-            title: 'Switching to Offline Mode',
-            html: 'Redirecting to offline mode...<br><small>Limited features available</small>',
-            timer: 2000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        }).then(() => {
-            window.location.href = offlinePath;
+        console.log('🔍 PWA Environment:');
+        console.log('   Host:', window.location.host);
+        console.log('   BASE_PATH:', BASE_PATH);
+        console.log('   SW Path:', swPath);
+        console.log('   SW Scope:', swScope);
+        console.log('   Display Mode:', window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' : 
+                                     window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+        
+        // First, verify sw.js exists
+        fetch(swPath)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`sw.js not found at ${swPath} (${response.status})`);
+                }
+                console.log('✅ sw.js file found at:', swPath);
+                
+                // Now register the service worker
+                return navigator.serviceWorker.register(swPath, { scope: swScope });
+            })
+            .then(registration => {
+                console.log('✅ Service Worker registered successfully');
+                console.log('   Scope:', registration.scope);
+                console.log('   Active:', !!registration.active);
+                
+                // Check for updates every minute
+                setInterval(() => {
+                    registration.update();
+                }, 60000);
+                
+                // Handle updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('🔄 New Service Worker found, installing...');
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('✨ New version available!');
+                            if (confirm('New version available! Reload to update?')) {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('❌ Service Worker registration failed:', error);
+                console.error('   Make sure sw.js exists at:', swPath);
+                console.error('   Current page URL:', window.location.href);
+                
+                // Show user-friendly error
+                Swal.fire({
+                    icon: 'error',
+                    title: 'PWA Setup Error',
+                    html: `<p>Service Worker file not found.</p>
+                           <p><strong>Expected location:</strong> <code>${swPath}</code></p>
+                           <p>Please ensure sw.js is in your public folder.</p>`,
+                    confirmButtonColor: '#5DADE2'
+                });
+            });
+    });
+
+    navigator.serviceWorker.addEventListener('message', event => {
+        const { type } = event.data;
+        
+        switch(type) {
+            case 'OFFLINE_CHOICE_DIALOG':
+                showOfflineChoiceDialog();
+                break;
+                
+            case 'ONLINE_STATUS':
+                if (event.data.status === 'online') {
+                    showOnlineNotification();
+                }
+                break;
+        }
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('🔄 Service Worker controller changed');
+        window.location.reload();
+    });
+}
+
+// Online/Offline handlers
+window.addEventListener('online', () => {
+    console.log('🌐 You are online');
+    document.body.classList.remove('offline-mode');
+    
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ 
+            type: 'RESET_OFFLINE_STATE' 
         });
     }
+    
+    showOnlineNotification();
+});
 
-    function showOnlineNotification() {
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
+window.addEventListener('offline', () => {
+    console.log('📵 You are offline');
+    document.body.classList.add('offline-mode');
+    showOfflineChoiceDialog();
+});
 
-        Toast.fire({
-            icon: 'success',
-            title: 'You are back online!'
+function showOfflineChoiceDialog() {
+    Swal.fire({
+        icon: 'warning',
+        title: 'You\'re Offline',
+        html: `
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                You are currently offline due to weak or no network connection.
+            </p>
+            <p style="font-size: 14px; color: #666;">
+                Choose an option to continue:
+            </p>
+        `,
+        showDenyButton: true,
+        showCancelButton: false,
+        confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
+        denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
+        confirmButtonColor: '#5DADE2',
+        denyButtonColor: '#95a5a6',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            retryConnection();
+        } else if (result.isDenied) {
+            redirectToOfflineMode();
+        }
+    });
+}
+
+function retryConnection() {
+    Swal.fire({
+        title: 'Checking Connection...',
+        html: 'Please wait while we check your internet connection.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch('https://www.google.com/favicon.ico', { 
+        mode: 'no-cors',
+        cache: 'no-store'
+    })
+        .then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Connected!',
+                text: 'Your internet connection has been restored.',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.reload();
+            });
+        })
+        .catch(() => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Still Offline',
+                text: 'Unable to connect to the internet. Please check your connection.',
+                confirmButtonText: 'Try Again',
+                showDenyButton: true,
+                denyButtonText: 'Continue Offline',
+                confirmButtonColor: '#5DADE2',
+                denyButtonColor: '#95a5a6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    retryConnection();
+                } else if (result.isDenied) {
+                    redirectToOfflineMode();
+                }
+            });
         });
+}
+
+function redirectToOfflineMode() {
+    const getBasePath = () => {
+        const path = window.location.pathname;
+        if (path.includes('/crms/public')) {
+            return '/crms/public';
+        }
+        return '';
+    };
+    
+    const offlinePath = `${getBasePath()}/offline/login.html`;
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Switching to Offline Mode',
+        html: 'Redirecting to offline mode...<br><small>Limited features available</small>',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    }).then(() => {
+        window.location.href = offlinePath;
+    });
+}
+
+function showOnlineNotification() {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+
+    Toast.fire({
+        icon: 'success',
+        title: 'You are back online!'
+    });
+}
+
+// Offline mode styles
+const offlineStyles = document.createElement('style');
+offlineStyles.textContent = `
+    .offline-mode {
+        filter: grayscale(20%);
     }
-
-    const offlineStyles = document.createElement('style');
-    offlineStyles.textContent = `
-        .offline-mode {
-            filter: grayscale(20%);
-        }
-        
-        .offline-mode::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #FF9800, #FF5722);
-            z-index: 10000;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    `;
-    document.head.appendChild(offlineStyles);
+    
+    .offline-mode::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #FF9800, #FF5722);
+        z-index: 10000;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+`;
+document.head.appendChild(offlineStyles);
     </script>
 </body>
 </html>
