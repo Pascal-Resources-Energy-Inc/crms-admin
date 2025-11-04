@@ -751,8 +751,9 @@ async function getDataFromIndexedDB(storeName) {
         // Detect the correct base path
         const getBasePath = () => {
             const path = window.location.pathname;
-            if (path.includes('/crms/public')) {
-                return '/crms/public';
+
+            if (path.includes('')) {
+                return '';
             }
             return '';
         };
