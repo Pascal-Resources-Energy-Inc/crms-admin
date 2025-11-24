@@ -1,9 +1,9 @@
 // =============================================================
-// sw.js - FIXED Service Worker with Smart Offline Detection
+// sw.js - COMPLETE Service Worker with All Offline Pages
 // Place this in: /public/sw.js
 // =============================================================
 
-const CACHE_NAME = "gazlite-pwa-v2-" + new Date().getTime();
+const CACHE_NAME = "gazlite-pwa-v3-" + new Date().getTime();
 
 // Track offline state
 let offlineWarningShown = false;
@@ -12,22 +12,47 @@ let consecutiveOfflineRequests = 0;
 // Define BASE_PATH
 const BASE_PATH = self.location.pathname.includes('/crms/public') ? '/crms/public' : '';
 
-// CRITICAL: Separate online and offline URLs
+// CRITICAL: Complete list of offline URLs to cache
 const OFFLINE_URLS = [
+  // PWA Launcher (entry point)
   `${BASE_PATH}/pwa-launcher.html`,
   
-  // Offline pages
+  // ALL Offline pages
   `${BASE_PATH}/offline/login.html`,
   `${BASE_PATH}/offline/home.html`,
+  `${BASE_PATH}/offline/products.html`,
+  `${BASE_PATH}/offline/cart.html`,
+  `${BASE_PATH}/offline/confirm_order.html`,
+  `${BASE_PATH}/offline/transaction.html`,
+  `${BASE_PATH}/offline/account.html`,
+  `${BASE_PATH}/offline/offline.js`,
   
+  // Images
+  `${BASE_PATH}/images/logo_sa_labas.png`,
+  `${BASE_PATH}/images/human.png`,
+  `${BASE_PATH}/images/context.png`,
+  `${BASE_PATH}/images/logo_nya.png`,
+  `${BASE_PATH}/images/aaa.png`,
+  `${BASE_PATH}/images/background.png`,
   
-  // External CDN resources
+  // Icons
+  `${BASE_PATH}/images/icons/icon-192x192.png`,
+  `${BASE_PATH}/images/icons/icon-512x512.png`,
+  `${BASE_PATH}/images/icons/logo_nya_192.png`,
+  `${BASE_PATH}/images/icons/logo_nya_512.png`,
+  
+  // External CDN resources (these will be cached on first visit)
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js",
   "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
   "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap",
   "https://fonts.googleapis.com/icon?family=Material+Icons",
   "https://cdn.jsdelivr.net/npm/sweetalert2@11",
-  "https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"
+  "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.all.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 ];
 
 // CRITICAL: Do NOT cache these online routes
@@ -38,33 +63,45 @@ const ONLINE_ONLY_ROUTES = [
   '/cart',
   '/transaction',
   '/account',
-  '/dashboard'
+  '/dashboard',
+  '/dealer',
+  '/client'
 ];
 
 // Install event
 self.addEventListener("install", event => {
   console.log(`[SW] Installing service worker with CACHE: ${CACHE_NAME}`);
   console.log(`[SW] BASE_PATH detected as: ${BASE_PATH}`);
+  console.log(`[SW] Will cache ${OFFLINE_URLS.length} resources`);
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log("[SW] Caching OFFLINE resources ONLY");
+        console.log("[SW] Caching OFFLINE resources...");
+        let successCount = 0;
+        let failCount = 0;
+        
         return Promise.allSettled(
           OFFLINE_URLS.map(url => {
             return cache.add(url)
-              .then(() => console.log(`[SW] ✓ Cached: ${url}`))
+              .then(() => {
+                successCount++;
+                console.log(`[SW] ✓ Cached (${successCount}/${OFFLINE_URLS.length}): ${url}`);
+              })
               .catch(error => {
-                console.warn(`[SW] ✗ Failed to cache: ${url}`, error.message);
+                failCount++;
+                console.warn(`[SW] ✗ Failed (${failCount}): ${url}`, error.message);
                 return Promise.resolve();
               });
           })
         );
       })
-      .then(() => {
-        console.log("[SW] Offline cache installation complete");
+      .then((results) => {
+        const successful = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+        console.log(`[SW] Cache complete: ${successful} cached, ${failed} failed`);
       })
-      .catch(error => console.error("[SW] Cache failed:", error))
+      .catch(error => console.error("[SW] Cache installation failed:", error))
   );
   
   // CRITICAL: Force activation immediately
@@ -94,6 +131,16 @@ self.addEventListener("activate", event => {
         
         // CRITICAL: Take control of all pages immediately
         return self.clients.claim();
+      })
+      .then(() => {
+        // Log what's in cache
+        return caches.open(CACHE_NAME);
+      })
+      .then(cache => {
+        return cache.keys();
+      })
+      .then(keys => {
+        console.log(`[SW] ${keys.length} items in cache:`, keys.map(k => k.url));
       })
   );
 });
@@ -200,6 +247,7 @@ async function handleNavigation(request, url) {
       const responseToCache = networkResponse.clone();
       caches.open(CACHE_NAME).then(cache => {
         cache.put(request, responseToCache);
+        console.log('[SW] Cached response for:', url.pathname);
       });
     }
     
@@ -223,7 +271,7 @@ async function handleNavigation(request, url) {
     
     // CRITICAL: If online route was requested while offline, redirect to offline version
     if (isOnlineRoute) {
-      console.log('[SW] Online route requested while offline - redirecting to offline version');
+      console.log('[SW] Online route requested while offline - serving offline version');
       
       // Map online routes to offline routes
       const pathname = url.pathname;
@@ -241,10 +289,14 @@ async function handleNavigation(request, url) {
         offlineRoute = 'account.html';
       }
       
+      console.log(`[SW] Looking for cached: ${BASE_PATH}/offline/${offlineRoute}`);
+      
       const offlinePage = await caches.match(`${BASE_PATH}/offline/${offlineRoute}`);
       if (offlinePage) {
-        console.log('[SW] Serving offline page:', offlineRoute);
+        console.log('[SW] ✅ Serving cached offline page:', offlineRoute);
         return offlinePage;
+      } else {
+        console.log('[SW] ❌ Offline page not in cache:', offlineRoute);
       }
     }
     
@@ -252,38 +304,48 @@ async function handleNavigation(request, url) {
     if (url.pathname === '/' || url.pathname === BASE_PATH || 
         url.pathname === `${BASE_PATH}/` || url.pathname === `${BASE_PATH}/login`) {
       
+      console.log('[SW] Main domain request while offline');
+      
       // If authenticated, serve offline home
       if (isAuth) {
         const offlineHome = await caches.match(`${BASE_PATH}/offline/home.html`);
         if (offlineHome) {
-          console.log("[SW] Serving cached offline home (authenticated)");
+          console.log("[SW] ✅ Serving cached offline home (authenticated)");
           return offlineHome;
+        } else {
+          console.log("[SW] ❌ Offline home not in cache");
         }
       }
       
       // Otherwise serve offline login
       const offlineLogin = await caches.match(`${BASE_PATH}/offline/login.html`);
       if (offlineLogin) {
-        console.log("[SW] Serving cached offline login");
+        console.log("[SW] ✅ Serving cached offline login");
         return offlineLogin;
+      } else {
+        console.log("[SW] ❌ Offline login not in cache");
       }
     }
     
     // Try to serve cached version of requested page
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      console.log("[SW] Serving cached page:", request.url);
+      console.log("[SW] ✅ Serving cached page:", request.url);
       return cachedResponse;
+    } else {
+      console.log("[SW] ❌ Page not in cache:", request.url);
     }
     
     // Serve default offline page
     const offlinePage = await caches.match(`${BASE_PATH}/offline/login.html`);
     if (offlinePage) {
-      console.log("[SW] Serving default offline page");
+      console.log("[SW] ✅ Serving default offline login page");
       return offlinePage;
     }
     
-    // Fallback HTML
+    console.log("[SW] ❌ No cached pages found, showing fallback");
+    
+    // Fallback HTML (only shown if nothing is cached)
     return new Response(`
       <!DOCTYPE html>
       <html lang="en">
@@ -336,8 +398,8 @@ async function handleNavigation(request, url) {
         <div class="container">
           <div class="icon">📵</div>
           <h1>You're Offline</h1>
-          <p>GazLite requires an internet connection for first-time setup.</p>
-          <p>Please check your connection and try again.</p>
+          <p>GazLite offline pages are not cached yet.</p>
+          <p>Please connect to the internet and visit the app first to enable offline mode.</p>
           <button onclick="window.location.reload()">Try Again</button>
         </div>
       </body>
@@ -357,7 +419,7 @@ async function handleAssets(request) {
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
-      console.log("[SW] Serving from cache:", request.url);
+      console.log("[SW] Serving asset from cache:", request.url);
       
       // Return cached version but update in background
       fetch(request)
@@ -383,13 +445,14 @@ async function handleAssets(request) {
       const responseToCache = networkResponse.clone();
       caches.open(CACHE_NAME).then(cache => {
         cache.put(request, responseToCache);
+        console.log('[SW] Cached asset:', request.url);
       });
     }
     
     return networkResponse;
     
   } catch (error) {
-    console.log("[SW] Network failed for asset:", request.url);
+    console.log("[SW] Asset not available:", request.url);
     return new Response('Offline - Resource not available', { 
       status: 503, 
       statusText: 'Service Unavailable',
@@ -440,3 +503,4 @@ self.addEventListener('message', event => {
 console.log('[SW] Service Worker loaded successfully');
 console.log('[SW] Cache name:', CACHE_NAME);
 console.log('[SW] Base path:', BASE_PATH);
+console.log('[SW] Total URLs to cache:', OFFLINE_URLS.length);
