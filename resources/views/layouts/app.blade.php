@@ -489,6 +489,29 @@
     <script src="{{asset('inside_css/assets/js/pages/particles.app.js')}}"></script>
     <script src="{{asset('inside_css/assets/js/pages/password-addon.init.js')}}"></script>
 
+<script>
+window.addEventListener('offline', () => {
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ 
+            type: 'CLEAR_ONLINE_CACHE' 
+        });
+    }
+    
+    console.log('📵 Going offline - cleared online cache');
+    
+    setTimeout(() => {
+        const isAuth = localStorage.getItem('current_user_id') || 
+                       localStorage.getItem('offlineUser');
+        
+        if (isAuth) {
+            window.location.href = '/offline/home.html';
+        } else {
+            window.location.href = '/offline/login.html';
+        }
+    }, 1000);
+});
+</script>
+
     
     <script>
       class PWALoadingManager {
