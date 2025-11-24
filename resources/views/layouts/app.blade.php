@@ -174,7 +174,186 @@
             z-index: 9999;
             animation: slideInRight 0.3s ease-out;
         }
-        
+
+        .pwa-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .pwa-loading-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pwa-loading-overlay.hidden {
+            display: none;
+        }
+
+        .pwa-loading-content {
+            text-align: center;
+            color: #333;
+            max-width: 90%;
+        }
+
+        .pwa-loading-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .pwa-loading-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #5DADE2;
+        }
+
+        .pwa-loading-subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-bottom: 40px;
+            color: #666;
+        }
+
+        .pwa-progress-container {
+            width: 300px;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .pwa-progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #E0E0E0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .pwa-progress-bar {
+            height: 100%;
+            background: #5DADE2;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .pwa-loading-status {
+            font-size: 14px;
+            opacity: 0.7;
+            min-height: 20px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .pwa-loading-percentage {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #5DADE2;
+        }
+
+        .pwa-loading-tasks {
+            margin-top: 30px;
+            text-align: left;
+            max-width: 300px;
+        }
+
+        .pwa-task-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 13px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            color: #666;
+        }
+
+        .pwa-task-item.active {
+            opacity: 1;
+            font-weight: 600;
+            color: #5DADE2;
+        }
+
+        .pwa-task-item.completed {
+            opacity: 0.4;
+            color: #999;
+        }
+
+        .pwa-task-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pwa-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(93, 173, 226, 0.3);
+            border-top-color: #5DADE2;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .pwa-checkmark {
+            color: #4ade80;
+            font-size: 16px;
+        }
+
+        .pwa-error-icon {
+            color: #f87171;
+            font-size: 16px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .pwa-loading-logo {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .pwa-loading-title {
+                font-size: 24px;
+            }
+            
+            .pwa-loading-subtitle {
+                font-size: 14px;
+            }
+            
+            .pwa-progress-container {
+                width: 280px;
+            }
+        }
         @keyframes slideInRight {
             from {
                 transform: translateX(400px);
@@ -188,6 +367,84 @@
     </style>
 </head>
 <body>
+      <div class="pwa-loading-overlay" id="pwaLoadingOverlay">
+        <div class="pwa-loading-content">
+            <img src="{{url('images/logo_nya.png')}}" alt="GazLite Logo" class="pwa-loading-logo">
+            
+            <h1 class="pwa-loading-title">GazLite</h1>
+            <p class="pwa-loading-subtitle">Preparing your experience...</p>
+            
+            <div class="pwa-progress-container">
+                <div class="pwa-progress-bar-bg">
+                    <div class="pwa-progress-bar" id="pwaProgressBar"></div>
+                </div>
+                
+                <div class="pwa-loading-percentage" id="pwaLoadingPercentage">0%</div>
+                <div class="pwa-loading-status" id="pwaLoadingStatus">Initializing...</div>
+                
+                <div class="pwa-loading-tasks">
+                    <div class="pwa-task-item" id="task-sw">
+                        <div class="pwa-task-icon">
+                            <div class="pwa-spinner"></div>
+                        </div>
+                        <span>Loading Service Worker</span>
+                    </div>
+                    
+                    <div class="pwa-task-item" id="task-cache">
+                        <div class="pwa-task-icon">
+                            <div class="pwa-spinner"></div>
+                        </div>
+                        <span>Caching essential files</span>
+                    </div>
+                    
+                    <div class="pwa-task-item" id="task-db">
+                        <div class="pwa-task-icon">
+                            <div class="pwa-spinner"></div>
+                        </div>
+                        <span>Syncing database</span>
+                    </div>
+                    
+                    <div class="pwa-task-item" id="task-assets">
+                        <div class="pwa-task-icon">
+                            <div class="pwa-spinner"></div>
+                        </div>
+                        <span>Loading resources</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      (function() {
+    const hasCompletedFirstLoad = localStorage.getItem('pwa-first-load-complete');
+    const overlay = document.getElementById('pwaLoadingOverlay');
+    
+    // CRITICAL: Check if Service Worker is already active
+    const isServiceWorkerActive = navigator.serviceWorker && navigator.serviceWorker.controller;
+    
+    // Skip loading if:
+    // 1. First load already completed, OR
+    // 2. Service Worker is already controlling the page (subsequent visits)
+    if (hasCompletedFirstLoad === 'true' || isServiceWorkerActive) {
+        if (overlay) {
+            overlay.classList.add('hidden');
+            overlay.style.display = 'none';
+        }
+        document.body.style.overflow = 'auto';
+        console.log('⚡ Skip loading - PWA already initialized');
+    } else {
+        // First time visit - show loading
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        console.log('📥 First visit - showing loading overlay');
+    }
+})();
+    </script>
+
     <div id="loader" style="display:none;" class="loader"></div>
     
     <!-- PWA Install Prompt -->
@@ -231,6 +488,356 @@
     <script src="{{asset('inside_css/assets/libs/particles.js/particles.js')}}"></script>
     <script src="{{asset('inside_css/assets/js/pages/particles.app.js')}}"></script>
     <script src="{{asset('inside_css/assets/js/pages/password-addon.init.js')}}"></script>
+
+    
+    <script>
+      class PWALoadingManager {
+    constructor() {
+        this.tasks = {
+            sw: { completed: false, weight: 20 },
+            cache: { completed: false, weight: 20 },
+            db: { completed: false, weight: 30 },
+            assets: { completed: false, weight: 10 }
+        };
+        
+        this.progressBar = document.getElementById('pwaProgressBar');
+        this.percentageText = document.getElementById('pwaLoadingPercentage');
+        this.statusText = document.getElementById('pwaLoadingStatus');
+        this.overlay = document.getElementById('pwaLoadingOverlay');
+        
+        this.shouldShowLoading = false;
+        this.allTasksCompleted = false;
+        this.loadingStartTime = Date.now();
+        this.MINIMUM_LOADING_TIME = 20000;
+    }
+    
+    checkIfLoadingNeeded() {
+        const hasCompletedFirstLoad = localStorage.getItem('pwa-first-load-complete');
+        
+        if (hasCompletedFirstLoad === 'true') {
+            console.log('Skipping loading - first load already completed');
+            this.shouldShowLoading = false;
+            this.overlay.classList.add('hidden');
+            return false;
+        }
+        
+        this.shouldShowLoading = true;
+        this.overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        return true;
+    }
+    
+    updateProgress() {
+        if (!this.shouldShowLoading) return;
+        
+        let taskProgress = 0;
+        for (const [key, task] of Object.entries(this.tasks)) {
+            if (task.completed) {
+                taskProgress += task.weight;
+            }
+        }
+        
+        const elapsedTime = Date.now() - this.loadingStartTime;
+        let totalProgress = 0;
+        
+        if (taskProgress >= 80) {
+            const progressFrom80 = 80 + ((elapsedTime / this.MINIMUM_LOADING_TIME) * 20);
+            totalProgress = Math.min(progressFrom80, 100);
+        } else {
+            const timeProgress = Math.min((elapsedTime / 19000) * 20, 20);
+            totalProgress = Math.min(taskProgress + timeProgress, 80);
+        }
+        
+        this.progressBar.style.width = totalProgress + '%';
+        this.percentageText.textContent = Math.round(totalProgress) + '%';
+        
+        const allComplete = Object.values(this.tasks).every(task => task.completed);
+        
+        if (allComplete && !this.allTasksCompleted) {
+            this.allTasksCompleted = true;
+            this.complete();
+        }
+    }
+    
+    completeTask(taskName, message = '') {
+        if (this.tasks[taskName]) {
+            this.tasks[taskName].completed = true;
+            
+            const taskElement = document.getElementById(`task-${taskName}`);
+            if (taskElement) {
+                taskElement.classList.add('completed');
+                taskElement.classList.remove('active');
+                
+                const icon = taskElement.querySelector('.pwa-task-icon');
+                icon.innerHTML = '<span class="pwa-checkmark">✓</span>';
+            }
+            
+            if (message && this.shouldShowLoading) {
+                this.statusText.textContent = message;
+            }
+            
+            console.log(`Task completed: ${taskName} - ${message}`);
+            this.updateProgress();
+        }
+    }
+    
+    setActiveTask(taskName, message = '') {
+        if (!this.shouldShowLoading) return;
+        
+        const taskElement = document.getElementById(`task-${taskName}`);
+        if (taskElement) {
+            taskElement.classList.add('active');
+        }
+        
+        if (message) {
+            this.statusText.textContent = message;
+        }
+    }
+    
+    failTask(taskName, message = '') {
+        console.error(`Task failed: ${taskName} - ${message}`);
+        
+        const taskElement = document.getElementById(`task-${taskName}`);
+        if (taskElement) {
+            taskElement.classList.add('completed');
+            taskElement.classList.remove('active');
+            
+            const icon = taskElement.querySelector('.pwa-task-icon');
+            icon.innerHTML = '<span class="pwa-error-icon">✗</span>';
+        }
+        
+        if (message && this.shouldShowLoading) {
+            this.statusText.textContent = message;
+        }
+        
+        setTimeout(() => {
+            this.completeTask(taskName, 'Completed with warnings');
+        }, 2000);
+    }
+    
+    complete() {
+        const elapsedTime = Date.now() - this.loadingStartTime;
+        const remainingTime = this.MINIMUM_LOADING_TIME - elapsedTime;
+        
+        if (remainingTime > 0) {
+            console.log(`All tasks done, waiting ${Math.round(remainingTime/1000)}s more...`);
+            this.statusText.textContent = 'Finalizing download...';
+            
+            const progressInterval = setInterval(() => {
+                this.updateProgress();
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(progressInterval);
+                this.updateProgress();
+                this.finishLoading();
+            }, remainingTime);
+        } else {
+            this.updateProgress();
+            this.finishLoading();
+        }
+    }
+    
+    finishLoading() {
+        if (this.shouldShowLoading) {
+            this.statusText.textContent = 'Ready!';
+            this.progressBar.style.width = '100%';
+            this.percentageText.textContent = '100%';
+        }
+        
+        localStorage.setItem('pwa-first-load-complete', 'true');
+        localStorage.setItem('pwa-last-sync', Date.now().toString());
+        
+        console.log('All tasks completed - App is ready!');
+        
+        setTimeout(() => {
+            this.overlay.classList.add('fade-out');
+            
+            setTimeout(() => {
+                this.overlay.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 500);
+        }, 500);
+    }
+}
+
+const loadingManager = new PWALoadingManager();
+
+(function initializePWA() {
+    const needsLoading = loadingManager.checkIfLoadingNeeded();
+    
+    if (!needsLoading) {
+        return;
+    }
+    
+    startLoadingTasks();
+    
+    setInterval(() => {
+        loadingManager.updateProgress();
+    }, 100);
+})();
+
+function startLoadingTasks() {
+    loadingManager.setActiveTask('sw', 'Registering Service Worker...');
+    
+    if ('serviceWorker' in navigator) {
+        const getBasePath = () => {
+            const path = window.location.pathname;
+            if (path.includes('/crms/public')) {
+                return '/crms/public';
+            }
+            return '';
+        };
+        
+        const BASE_PATH = getBasePath();
+        const swPath = `${BASE_PATH}/sw.js`;
+        const swScope = `${BASE_PATH}/`;
+        
+        fetch(swPath)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`sw.js not found at ${swPath}`);
+                }
+                return navigator.serviceWorker.register(swPath, { scope: swScope });
+            })
+            .then(registration => {
+                console.log('Service Worker registered');
+                
+                if (registration.active) {
+                    loadingManager.completeTask('sw', 'Service Worker active');
+                    loadCacheAndAssets();
+                } else {
+                    const worker = registration.installing || registration.waiting;
+                    if (worker) {
+                        worker.addEventListener('statechange', () => {
+                            if (worker.state === 'activated') {
+                                loadingManager.completeTask('sw', 'Service Worker active');
+                                loadCacheAndAssets();
+                            }
+                        });
+                    }
+                }
+                
+                setInterval(() => {
+                    registration.update();
+                }, 60000);
+            })
+            .catch(error => {
+                console.error('Service Worker failed:', error);
+                loadingManager.failTask('sw', 'Service Worker registration failed');
+            });
+    } else {
+        loadingManager.completeTask('sw', 'Service Worker not supported');
+        loadCacheAndAssets();
+    }
+    
+    loadingManager.setActiveTask('db', 'Syncing database...');
+    saveAllDataToIndexedDBWithProgress();
+}
+
+function loadCacheAndAssets() {
+    loadingManager.setActiveTask('cache', 'Caching essential files...');
+    
+    const checkCacheReady = async () => {
+        try {
+            const cacheNames = await caches.keys();
+            if (cacheNames.length > 0) {
+                const cache = await caches.open(cacheNames[0]);
+                const keys = await cache.keys();
+                
+                if (keys.length > 5) {
+                    console.log('Cache populated with', keys.length, 'files');
+                    loadingManager.completeTask('cache', 'Cache ready');
+                    loadAssets();
+                    return true;
+                }
+            }
+            return false;
+        } catch (err) {
+            console.error('Error checking cache:', err);
+            return false;
+        }
+    };
+    
+    let attempts = 0;
+    const maxAttempts = 20;
+    
+    const pollCache = setInterval(async () => {
+        attempts++;
+        
+        const ready = await checkCacheReady();
+        
+        if (ready) {
+            clearInterval(pollCache);
+        } else if (attempts >= maxAttempts) {
+            clearInterval(pollCache);
+            console.log('Cache check timeout - marking as complete');
+            loadingManager.completeTask('cache', 'Cache ready');
+            loadAssets();
+        } else {
+            console.log(`Caching files... (${attempts}/${maxAttempts}s)`);
+            loadingManager.statusText.textContent = `Caching files... ${attempts}/${maxAttempts}s`;
+        }
+    }, 1000);
+}
+
+function loadAssets() {
+    loadingManager.setActiveTask('assets', 'Loading resources...');
+    
+    if (document.readyState === 'complete') {
+        loadingManager.completeTask('assets', 'Resources loaded');
+    } else {
+        window.addEventListener('load', () => {
+            loadingManager.completeTask('assets', 'Resources loaded');
+        });
+    }
+}
+
+async function saveAllDataToIndexedDBWithProgress() {
+    try {
+        console.log('Starting IndexedDB sync...');
+        
+        await saveUsersToIndexedDB();
+        await saveDealersToIndexedDB();
+        await saveClientsToIndexedDB();
+        await saveTransactionsToIndexedDB();
+        await saveStovesToIndexedDB();
+        await saveItemsToIndexedDB();
+        
+        console.log('IndexedDB sync completed!');
+        loadingManager.completeTask('db', 'Database synchronized');
+    } catch (err) {
+        console.error('IndexedDB sync failed:', err);
+        loadingManager.failTask('db', 'Database sync failed');
+    }
+}
+
+window.addEventListener('offline', () => {
+    if (loadingManager.shouldShowLoading && !loadingManager.allTasksCompleted) {
+        console.log('Connection lost during loading - continuing with cached data');
+        loadingManager.statusText.textContent = 'Connection lost - loading cached data...';
+    }
+});
+
+window.addEventListener('online', () => {
+    if (loadingManager.shouldShowLoading && !loadingManager.allTasksCompleted) {
+        console.log('Connection restored - continuing downloads...');
+        loadingManager.statusText.textContent = 'Connection restored, continuing...';
+    }
+});
+
+setTimeout(() => {
+    if (loadingManager.shouldShowLoading && !loadingManager.allTasksCompleted) {
+        console.log('Maximum loading time reached (25s) - forcing completion');
+        
+        Object.keys(loadingManager.tasks).forEach(taskName => {
+            if (!loadingManager.tasks[taskName].completed) {
+                loadingManager.completeTask(taskName, 'Auto-completed');
+            }
+        });
+    }
+}, 25000);
+    </script>
 
     <!-- IndexedDB Management Script -->
     <script>
@@ -770,7 +1377,6 @@ window.addEventListener('appinstalled', (e) => {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Detect the correct base path
         const getBasePath = () => {
             const path = window.location.pathname;
             if (path.includes('/crms/public')) {
@@ -784,28 +1390,26 @@ if ('serviceWorker' in navigator) {
         const swScope = `${BASE_PATH}/`;
         
         console.log('🔍 PWA Environment:');
-        console.log('   Host:', window.location.host);
-        console.log('   BASE_PATH:', BASE_PATH);
         console.log('   SW Path:', swPath);
         console.log('   SW Scope:', swScope);
-        console.log('   Display Mode:', window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' : 
-                                     window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
         
-        // First, verify sw.js exists
+        // Verify sw.js exists
         fetch(swPath)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`sw.js not found at ${swPath} (${response.status})`);
+                    throw new Error(`sw.js not found at ${swPath}`);
                 }
-                console.log('✅ sw.js file found at:', swPath);
+                console.log('✅ sw.js file found');
                 
-                // Now register the service worker
-                return navigator.serviceWorker.register(swPath, { scope: swScope });
+                // Register the service worker
+                return navigator.serviceWorker.register(swPath, { 
+                    scope: swScope,
+                    updateViaCache: 'none' // Always check for updates
+                });
             })
             .then(registration => {
                 console.log('✅ Service Worker registered successfully');
                 console.log('   Scope:', registration.scope);
-                console.log('   Active:', !!registration.active);
                 
                 // Check for updates every minute
                 setInterval(() => {
@@ -815,7 +1419,7 @@ if ('serviceWorker' in navigator) {
                 // Handle updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
-                    console.log('🔄 New Service Worker found, installing...');
+                    console.log('🔄 New Service Worker found');
                     
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -830,44 +1434,44 @@ if ('serviceWorker' in navigator) {
             })
             .catch(error => {
                 console.error('❌ Service Worker registration failed:', error);
-                console.error('   Make sure sw.js exists at:', swPath);
-                console.error('   Current page URL:', window.location.href);
-                
-                // Show user-friendly error
-                Swal.fire({
-                    icon: 'error',
-                    title: 'PWA Setup Error',
-                    html: `<p>Service Worker file not found.</p>
-                           <p><strong>Expected location:</strong> <code>${swPath}</code></p>
-                           <p>Please ensure sw.js is in your public folder.</p>`,
-                    confirmButtonColor: '#5DADE2'
-                });
             });
     });
 
+    // Listen for messages from Service Worker
     navigator.serviceWorker.addEventListener('message', event => {
         const { type } = event.data;
         
         switch(type) {
-            case 'OFFLINE_CHOICE_DIALOG':
-                showOfflineChoiceDialog();
+            case 'OFFLINE_STATUS':
+                handleOfflineStatus();
                 break;
                 
-            case 'ONLINE_STATUS':
-                if (event.data.status === 'online') {
-                    showOnlineNotification();
-                }
+            case 'CHECK_AUTH':
+                // Respond with authentication status
+                const offlineUser = localStorage.getItem('offlineUser');
+                const currentUserId = localStorage.getItem('current_user_id');
+                const authenticated = !!(offlineUser || currentUserId);
+                
+                event.ports[0].postMessage({ 
+                    authenticated: authenticated,
+                    userId: currentUserId,
+                    role: localStorage.getItem('current_user_role')
+                });
                 break;
         }
     });
 
+    // Handle controller change (new SW activated)
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('🔄 Service Worker controller changed');
-        window.location.reload();
+        if (!window.reloadTriggered) {
+            window.reloadTriggered = true;
+            window.location.reload();
+        }
     });
 }
 
-// Online/Offline handlers
+// Online/Offline event handlers
 window.addEventListener('online', () => {
     console.log('🌐 You are online');
     document.body.classList.remove('offline-mode');
@@ -878,60 +1482,101 @@ window.addEventListener('online', () => {
         });
     }
     
-    showOnlineNotification();
+    // Show notification
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+
+        Toast.fire({
+            icon: 'success',
+            title: 'You are back online!'
+        });
+    }
+    
+    // If on offline page, redirect to online version
+    if (window.location.pathname.includes('/offline/')) {
+        const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+        setTimeout(() => {
+            window.location.href = `${basePath}/login`;
+        }, 2000);
+    }
 });
 
 window.addEventListener('offline', () => {
     console.log('📵 You are offline');
     document.body.classList.add('offline-mode');
-    showOfflineChoiceDialog();
+    handleOfflineStatus();
 });
 
-function showOfflineChoiceDialog() {
-    Swal.fire({
-        icon: 'warning',
-        title: 'You\'re Offline',
-        html: `
-            <p style="font-size: 16px; margin-bottom: 20px;">
-                You are currently offline due to weak or no network connection.
-            </p>
-            <p style="font-size: 14px; color: #666;">
-                Choose an option to continue:
-            </p>
-        `,
-        showDenyButton: true,
-        showCancelButton: false,
-        confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
-        denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
-        confirmButtonColor: '#5DADE2',
-        denyButtonColor: '#95a5a6',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    }).then((result) => {
-        if (result.isConfirmed) {
-            retryConnection();
-        } else if (result.isDenied) {
-            redirectToOfflineMode();
-        }
-    });
+function handleOfflineStatus() {
+    // Check if we're already on an offline page
+    if (window.location.pathname.includes('/offline/')) {
+        console.log('Already on offline page');
+        return;
+    }
+    
+    // Check authentication
+    const offlineUser = localStorage.getItem('offlineUser');
+    const currentUserId = localStorage.getItem('current_user_id');
+    const isAuthenticated = !!(offlineUser || currentUserId);
+    
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'You\'re Offline',
+            html: `
+                <p style="font-size: 16px; margin-bottom: 20px;">
+                    You are currently offline due to weak or no network connection.
+                </p>
+                <p style="font-size: 14px; color: #666;">
+                    ${isAuthenticated ? 'Continue using offline mode with limited features?' : 'You can still access the offline login page.'}
+                </p>
+            `,
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
+            denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
+            confirmButtonColor: '#5DADE2',
+            denyButtonColor: '#95a5a6',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                retryConnection();
+            } else if (result.isDenied) {
+                redirectToOfflineMode(isAuthenticated);
+            }
+        });
+    } else {
+        // Fallback if SweetAlert not loaded
+        redirectToOfflineMode(isAuthenticated);
+    }
 }
 
 function retryConnection() {
-    Swal.fire({
-        title: 'Checking Connection...',
-        html: 'Please wait while we check your internet connection.',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Checking Connection...',
+            html: 'Please wait while we check your internet connection.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
 
     fetch('https://www.google.com/favicon.ico', { 
         mode: 'no-cors',
         cache: 'no-store'
     })
-        .then(() => {
+    .then(() => {
+        if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'success',
                 title: 'Connected!',
@@ -941,12 +1586,16 @@ function retryConnection() {
             }).then(() => {
                 window.location.reload();
             });
-        })
-        .catch(() => {
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(() => {
+        if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
                 title: 'Still Offline',
-                text: 'Unable to connect to the internet. Please check your connection.',
+                text: 'Unable to connect to the internet.',
                 confirmButtonText: 'Try Again',
                 showDenyButton: true,
                 denyButtonText: 'Continue Offline',
@@ -956,53 +1605,52 @@ function retryConnection() {
                 if (result.isConfirmed) {
                     retryConnection();
                 } else if (result.isDenied) {
-                    redirectToOfflineMode();
+                    const offlineUser = localStorage.getItem('offlineUser');
+                    const isAuthenticated = !!offlineUser;
+                    redirectToOfflineMode(isAuthenticated);
                 }
             });
+        }
+    });
+}
+
+function redirectToOfflineMode(isAuthenticated = false) {
+    const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+    const targetPage = isAuthenticated ? 'home.html' : 'login.html';
+    const offlinePath = `${basePath}/offline/${targetPage}`;
+    
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Switching to Offline Mode',
+            html: `Redirecting to offline ${isAuthenticated ? 'home' : 'login'}...<br><small>Limited features available</small>`,
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        }).then(() => {
+            window.location.href = offlinePath;
         });
-}
-
-function redirectToOfflineMode() {
-    const getBasePath = () => {
-        const path = window.location.pathname;
-        if (path.includes('/crms/public')) {
-            return '/crms/public';
-        }
-        return '';
-    };
-    
-    const offlinePath = `${getBasePath()}/offline/login.html`;
-    
-    Swal.fire({
-        icon: 'info',
-        title: 'Switching to Offline Mode',
-        html: 'Redirecting to offline mode...<br><small>Limited features available</small>',
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    }).then(() => {
+    } else {
         window.location.href = offlinePath;
-    });
+    }
 }
 
-function showOnlineNotification() {
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
-    });
-
-    Toast.fire({
-        icon: 'success',
-        title: 'You are back online!'
-    });
-}
+// Check network status on page load
+window.addEventListener('load', () => {
+    if (!navigator.onLine) {
+        console.log('📵 Starting offline');
+        document.body.classList.add('offline-mode');
+        
+        // Small delay to ensure page is loaded
+        setTimeout(() => {
+            handleOfflineStatus();
+        }, 1000);
+    }
+});
 
 // Offline mode styles
 const offlineStyles = document.createElement('style');
