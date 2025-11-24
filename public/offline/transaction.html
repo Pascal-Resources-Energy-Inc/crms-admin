@@ -1,779 +1,982 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GazLite Dashboard</title>
-  <meta name="theme-color" content="#007bff">
-  <link rel="manifest" href="manifest.json">
-  
-  <!-- SweetAlert2 CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    @font-face {
-      font-family: 'bootstrap-icons';
-      src: url('https://cdn.jsdelivr.net/npm/bootstrap-icons/font/fonts/bootstrap-icons.woff2') format('woff2');
-      font-display: swap;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GazLite - Transaction History</title>
     
-    .bi::before {
-      font-family: bootstrap-icons !important;
-      font-style: normal;
-      font-weight: normal !important;
-      font-variant: normal;
-      text-transform: none;
-      line-height: 1;
-      vertical-align: -.125em;
-      -webkit-font-smoothing: antialiased;
-    }
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      background: #f5f5f5;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      padding-top: 80px;
-      padding-bottom: 100px;
-    }
+        body {
+            background: #f5f5f5;
+            font-family: 'Poppins', Arial, sans-serif;
+            padding-bottom: 80px;
+        }
 
-    .top-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      z-index: 999;
-      height: 80px;
-    }
+        /* Page Header */
+        .page-header {
+            background: #fff;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #e1e1e1;
+        }
 
-    .user-greeting h6 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #2c3e50;
-      margin: 0 0 4px 0;
-    }
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s ease;
+        }
 
-    .user-greeting small {
-      font-size: 12px;
-      color: #6c757d;
-    }
+        .back-btn:hover {
+            color: #4A90E2;
+        }
 
-    .header-icons {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4A90E2;
+            margin: 0;
+        }
 
-    .points-badge {
-      background: white;
-      border: 2px solid #5BC2E7;
-      border-radius: 25px;
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        /* Filter Section */
+        .filter-section {
+            background: #fff;
+            margin-bottom: 15px;
+        }
 
-    .coin-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #ffd700, #ffed4e);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-    }
+        .filter-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
 
-    .points-text {
-      font-size: 14px;
-      font-weight: 700;
-      color: #2c3e50;
-    }
+        .filter-btn:hover {
+            background: #f8f9fa;
+        }
 
-    .main-content-wrapper {
-      padding: 20px 16px 100px 16px;
-      min-height: calc(100vh - 180px);
-    }
+        .filter-icon {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .card {
-      margin-bottom: 20px;
-      background: white;
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    }
+        /* Transaction Groups */
+        .transaction-group {
+            margin-bottom: 25px;
+            padding: 0 20px;
+        }
 
-    .card-body {
-      padding: 20px;
-      position: relative;
-    }
+        .group-header {
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-    .dealer-info {
-      position: relative;
-      z-index: 2;
-      height: 80px;
-    }
+        .group-date {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
 
-    .dealer-info p {
-      margin: 0;
-      font-size: 12px;
-      line-height: 1.7;
-      color: #333;
-    }
+        .group-total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
 
-    .school-img {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 200px;
-      height: 100%;
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-      pointer-events: none;
-    }
+        .transaction-card {
+            background: #fff;
+            padding: 24px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
 
-    .school-img img {
-      width: auto;
-      height: 100%;
-      max-height: 180px;
-      object-fit: contain;
-      object-position: right bottom;
-    }
+        .transaction-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
 
-    .section-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #5BC2E7;
-      margin-bottom: 8px;
-    }
+        .transaction-details {
+            flex-grow: 1;
+        }
 
-    .transaction-list {
-      max-height: 500px;
-      overflow-y: auto;
-    }
+        .transaction-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 6px;
+        }
 
-    .transaction-item {
-      background: white;
-      border-radius: 20px;
-      margin-bottom: 12px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      border: 1px solid #e2e8f0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
+        .transaction-info {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 400;
+        }
 
-    .transaction-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-      min-width: 0;
-    }
+        .transaction-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
-    .user-avatar {
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #5BC2E7, #4facfe);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 20px;
-      flex-shrink: 0;
-      border: 2px solid #e2e8f0;
-    }
+        .transaction__badge {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #4A90E2;
+            color: #fff;
+        }
 
-    .transaction-details {
-      flex: 1;
-      min-width: 0;
-    }
+        .transaction__badge:hover {
+            background: #357abd;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+        }
 
-    .transaction-details h6 {
-      font-size: 15px;
-      font-weight: 700;
-      color: #000;
-      margin: 0 0 4px 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+        /* Filter Modal */
+        .filter-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: flex-end;
+            justify-content: center;
+        }
 
-    .transaction-details p {
-      font-size: 12px;
-      color: #6c757d;
-      margin: 0;
-    }
+        .filter-modal.active {
+            display: flex;
+        }
 
-    .quantity-badge {
-      width: 38px;
-      height: 38px;
-      background: #5BC2E7;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      font-weight: 700;
-      color: white;
-      flex-shrink: 0;
-    }
+        .filter-modal__dialog {
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 500px;
+            animation: slideUp 0.3s ease-out;
+        }
 
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
-      z-index: 1000;
-    }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
 
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      color: #999;
-      font-size: 11px;
-      height: 100%;
-    }
+        .filter-modal__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e8e8e8;
+        }
 
-    .nav-item i {
-      font-size: 22px;
-      margin-bottom: 4px;
-    }
+        .filter-modal__title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
 
-    .nav-item.active {
-      color: #5BC2E7;
-    }
+        .filter-modal__close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #2c3e50;
+            cursor: pointer;
+            padding: 0;
+        }
 
-    .network-status {
-      position: fixed;
-      top: 90px;
-      right: 10px;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      z-index: 9999;
-      display: none;
-    }
+        .filter-modal__body {
+            padding: 24px;
+        }
 
-    .network-status.offline {
-      background: #ff4757;
-      color: white;
-      display: block;
-    }
+        .filter-modal__radio {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            font-size: 16px;
+            color: #2c3e50;
+            padding: 12px 0;
+            margin-bottom: 12px;
+        }
 
-    .network-status.online {
-      background: #2ecc71;
-      color: white;
-      display: block;
-    }
+        .filter-modal__radio input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
 
-    @media (max-width: 576px) {
-      .school-img {
-        width: 140px !important;
-      }
-      
-      .school-img img {
-        max-height: 100px;
-      }
-    }
-  </style>
+        .filter-modal__radio-text {
+            flex: 1;
+        }
+
+        .filter-modal__radio-indicator {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .filter-modal__radio input[type="radio"]:checked ~ .filter-modal__radio-indicator {
+            border-color: #4A90E2;
+        }
+
+        .filter-modal__radio input[type="radio"]:checked ~ .filter-modal__radio-indicator::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #4A90E2;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .filter-modal__date-range {
+            margin-top: 20px;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .filter-modal__date-range.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .filter-modal__input {
+            background: #f8f9fa;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .filter-modal__label {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .filter-modal__footer {
+            padding: 16px 24px 24px;
+        }
+
+        .filter-modal__submit {
+            width: 100%;
+            background: #4A90E2;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .filter-modal__submit:hover {
+            background: #357abd;
+        }
+
+        /* Details Modal */
+        .details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .details-modal.active {
+            display: flex;
+        }
+
+        .details-modal__dialog {
+            background: #fff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .details-modal__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid #e8e8e8;
+            position: sticky;
+            top: 0;
+            background: #fff;
+        }
+
+        .details-modal__title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .details-modal__close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #2c3e50;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .details-modal__body {
+            padding: 24px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section__title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-size: 15px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .detail-value--highlight {
+            color: #4A90E2;
+            font-size: 18px;
+        }
+
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .payment-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .transaction-group {
+                padding: 0 15px;
+            }
+
+            .transaction-card {
+                padding: 18px 16px;
+            }
+
+            .transaction-name {
+                font-size: 16px;
+            }
+
+            .transaction-info {
+                font-size: 13px;
+            }
+
+            .group-date {
+                font-size: 14px;
+            }
+
+            .group-total {
+                font-size: 16px;
+            }
+
+            .transaction__badge {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
-
 <body>
-  <!-- Network Status -->
-  <div class="network-status" id="networkStatus"></div>
-
-  <!-- Top Header -->
-  <div class="top-header">
-    <div class="user-greeting">
-      <h6 id="userGreeting">Loading...</h6>
-      <small>Welcome back to dashboard</small>
+    <!-- Page Header -->
+    <div class="page-header">
+        <button class="back-btn" onclick="window.history.back()">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <h1 class="page-title">Transaction History</h1>
     </div>
-    <div class="header-icons">
-      <div class="points-badge">
-        <div class="coin-icon">
-          <i class="bi bi-coin" style="font-size: 18px; color: white;"></i>
-        </div>
-        <span class="points-text" id="pointsDisplay">0 points</span>
-      </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <button class="filter-btn" onclick="openFilterModal()">
+            <div class="filter-icon">
+                <i class="bi bi-sliders"></i>
+                <span>Filter Date & Time</span>
+            </div>
+            <i class="bi bi-chevron-right"></i>
+        </button>
     </div>
-  </div>
 
-  <!-- Main Content -->
-  <div class="main-content-wrapper">
-    <section class="welcome welcome-dealer">
-      <div class="row">    
-        <div class="col-12 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="dealer-info" id="dealerInfo">
-                <p><strong>Dealer ID:</strong> N/A</p>
-                <p><strong>Name:</strong> N/A</p>
-                <p><strong>Contact No.:</strong> N/A</p>
-                <p><strong>Registered:</strong> N/A</p>
-              </div>
-              <div class="school-img">
-                <img src="../images/background.png" alt="Background">
-              </div>
-            </div>
-          </div>
+    <!-- Transactions Container -->
+    <div id="transactions-container">
+        <div class="empty-state">
+            <i class="bi bi-clock-history"></i>
+            <h3>Loading transactions...</h3>
         </div>
-      </div>
-      
-      <h5 class="mb-3 section-title">Latest Transaction</h5>
-      
-      <div class="row">
-        <div class="col-12">
-          <div class="transaction-list" id="transactionList">
-            <div class="text-center py-4">
-              <i class="bi bi-hourglass-split" style="font-size: 48px; color: #999;"></i>
-              <p style="color: #6c757d; margin-top: 16px;">Loading transactions...</p>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" class="filter-modal">
+        <div class="filter-modal__dialog">
+            <div class="filter-modal__header">
+                <h2 class="filter-modal__title">Filter Transactions</h2>
+                <button class="filter-modal__close" onclick="closeFilterModal()">
+                    <i class="bi bi-x"></i>
+                </button>
             </div>
-          </div>
+
+            <div class="filter-modal__body">
+                <label class="filter-modal__radio">
+                    <input type="radio" name="dateFilter" value="90days" checked>
+                    <span class="filter-modal__radio-text">Last 90 days</span>
+                    <span class="filter-modal__radio-indicator"></span>
+                </label>
+
+                <label class="filter-modal__radio">
+                    <input type="radio" name="dateFilter" value="custom">
+                    <span class="filter-modal__radio-text">Choose date range</span>
+                    <span class="filter-modal__radio-indicator"></span>
+                </label>
+
+                <div class="filter-modal__date-range" id="dateRangeSection">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="filter-modal__label">Starting from</label>
+                            <input type="date" class="filter-modal__input" id="startDate">
+                        </div>
+                        <div class="col-6">
+                            <label class="filter-modal__label">Until</label>
+                            <input type="date" class="filter-modal__input" id="endDate">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-modal__footer">
+                <button class="filter-modal__submit" onclick="applyFilter()">Apply Filter</button>
+            </div>
         </div>
-      </div>
-    </section>
-  </div>
+    </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="home.html" class="nav-item active">
-      <i class="bi bi-house-door-fill"></i>
-      <span>Home</span>
-    </a>
-    <a href="products.html" class="nav-item">
-      <i class="bi bi-bag"></i>
-      <span>Products</span>
-    </a>
-    <a href="transaction.html" class="nav-item">
-      <i class="bi bi-clock-history"></i>
-      <span>History</span>
-    </a>
-    <a href="account.html" class="nav-item">
-      <i class="bi bi-person"></i>
-      <span>Profile</span>
-    </a>
-  </nav>
+    <!-- Details Modal -->
+    <div id="detailsModal" class="details-modal">
+        <div class="details-modal__dialog">
+            <div class="details-modal__header">
+                <h2 class="details-modal__title">Transaction Details</h2>
+                <button class="details-modal__close" onclick="closeDetailsModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="details-modal__body" id="detailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="/offline/offline.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/offline/offline.js"></script>
+    
+    <script>
+        // IndexedDB Setup
+        let db;
+        const DB_NAME = 'GazLiteDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'transactions';
 
-  <script>
-    // ============================================
-    // SERVICE WORKER REGISTRATION
-    // ============================================
-    (function() {
-      'use strict';
-      
-      if (!('serviceWorker' in navigator)) {
-        console.warn('❌ Service Worker not supported');
-        return;
-      }
-      
-      const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
-      const swPath = `${basePath}/sw.js`;
-      
-      console.log('🔧 Registering Service Worker:', swPath);
-      
-      navigator.serviceWorker.register(swPath, { scope: basePath || '/' })
-        .then(registration => {
-          console.log('✅ Service Worker registered');
-          
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            console.log('🔄 SW update found');
-            
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🆕 New version available');
-              }
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = () => {
+                    console.error('Database failed to open');
+                    reject(request.error);
+                };
+
+                request.onsuccess = () => {
+                    db = request.result;
+                    console.log('Database opened successfully');
+                    resolve(db);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const objectStore = db.createObjectStore(STORE_NAME, { 
+                            keyPath: 'id', 
+                            autoIncrement: true 
+                        });
+                        
+                        objectStore.createIndex('order_id', 'order_id', { unique: true });
+                        objectStore.createIndex('customer_id', 'customer_id', { unique: false });
+                        objectStore.createIndex('created_at', 'created_at', { unique: false });
+                        objectStore.createIndex('payment_method', 'payment_method', { unique: false });
+                        objectStore.createIndex('status', 'status', { unique: false });
+                        
+                        console.log('Object store created');
+                    }
+                };
             });
-          });
-        })
-        .catch(error => {
-          console.error('❌ SW registration failed:', error);
-        });
-      
-      navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data?.type === 'CHECK_AUTH') {
-          const currentUserId = localStorage.getItem('current_user_id');
-          const offlineUser = localStorage.getItem('offlineUser');
-          const authenticated = !!(currentUserId || offlineUser);
-          event.ports[0].postMessage({ authenticated });
-        }
-      });
-    })();
-
-    // ============================================
-    // AUTH CHECK
-    // ============================================
-    (function() {
-      const offlineUser = localStorage.getItem('offlineUser');
-      const currentUserId = localStorage.getItem('current_user_id');
-      
-      if (!offlineUser && !currentUserId) {
-        window.location.replace('login.html');
-      }
-    })();
-
-    // ============================================
-    // INDEXEDDB FUNCTIONS
-    // ============================================
-    function openCRMSDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('CRMSDB', 3);
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject('CRMSDB error');
-      });
-    }
-
-    function openGazLiteDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('GazLiteDB', 1);
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject('GazLiteDB error');
-      });
-    }
-
-    async function getCurrentUser() {
-      try {
-        let currentUserId = localStorage.getItem('current_user_id');
-        
-        if (!currentUserId) {
-          const offlineUser = localStorage.getItem('offlineUser');
-          if (offlineUser) {
-            currentUserId = JSON.parse(offlineUser).id;
-          }
-        }
-        
-        if (!currentUserId) {
-          window.location.href = 'login.html';
-          return null;
         }
 
-        const db = await openCRMSDB();
-        const tx = db.transaction('users', 'readonly');
-        const store = tx.objectStore('users');
-        
-        return new Promise((resolve) => {
-          const request = store.get(parseInt(currentUserId));
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => {
-            window.location.href = 'login.html';
-          };
-        });
-      } catch (error) {
-        console.error('Error:', error);
-        window.location.href = 'login.html';
-        return null;
-      }
-    }
+        function getAllTransactions() {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([STORE_NAME], 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.getAll();
 
-    async function fetchDealerInfo(userId) {
-      const db = await openCRMSDB();
-      const tx = db.transaction('dealers', 'readonly');
-      const store = tx.objectStore('dealers');
-      const dealers = await new Promise((resolve) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-      
-      const dealer = dealers.find(d => d.user_id === userId);
-      
-      if (dealer) {
-        const year = new Date(dealer.created_at).getFullYear();
-        const dealerId = `${year}-${dealer.id}`;
-        const regDate = new Date(dealer.created_at).toLocaleDateString('en-US', {
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric'
-        });
-        
-        document.getElementById('dealerInfo').innerHTML = `
-          <p><strong>Dealer ID:</strong> ${dealerId}</p>
-          <p><strong>Name:</strong> ${dealer.name || 'N/A'}</p>
-          <p><strong>Contact No.:</strong> ${dealer.number || 'N/A'}</p>
-          <p><strong>Registered:</strong> ${regDate}</p>
-        `;
-        
-        const points = await calculateDealerPoints();
-        document.getElementById('pointsDisplay').textContent = `${points} points`;
-        
-        await loadTransactions();
-      }
-    }
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
 
-    async function calculateDealerPoints() {
-      try {
-        // Try IndexedDB first
-        const db = await openGazLiteDB();
-        const tx = db.transaction('transactions', 'readonly');
-        const store = tx.objectStore('transactions');
-        const dbTransactions = await new Promise((resolve) => {
-          const request = store.getAll();
-          request.onsuccess = () => resolve(request.result);
-        });
-        
-        let transactions = [];
-        
-        if (dbTransactions && dbTransactions.length > 0) {
-          transactions = dbTransactions;
-        } else {
-          // Fallback to localStorage
-          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-          transactions = completedOrders;
+                request.onerror = () => {
+                    reject(request.error);
+                };
+            });
         }
-        
-        // Calculate total quantity as points (1 item = 1 point)
-        const totalPoints = transactions.reduce((sum, t) => {
-          const itemsCount = t.items ? t.items.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) : 0;
-          return sum + itemsCount;
-        }, 0);
-        
-        return totalPoints;
-      } catch (error) {
-        console.error('Error calculating points:', error);
-        // Fallback to localStorage on error
-        try {
-          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-          const totalPoints = completedOrders.reduce((sum, t) => {
-            const itemsCount = t.items ? t.items.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) : 0;
-            return sum + itemsCount;
-          }, 0);
-          return totalPoints;
-        } catch {
-          return 0;
-        }
-      }
-    }
 
-    async function loadTransactions() {
-      try {
-        // Try IndexedDB first
-        const db = await openGazLiteDB();
-        const tx = db.transaction('transactions', 'readonly');
-        const store = tx.objectStore('transactions');
-        const dbTransactions = await new Promise((resolve) => {
-          const request = store.getAll();
-          request.onsuccess = () => resolve(request.result);
-        });
-        
         let allTransactions = [];
-        
-        if (dbTransactions && dbTransactions.length > 0) {
-          // Use IndexedDB data
-          allTransactions = dbTransactions.map(t => ({
-            id: t.id,
-            order_id: t.order_id,
-            customer_name: t.customer_name,
-            customer_serial: t.customer_serial || '',
-            customer_number: t.customer_number || '',
-            payment_method: t.payment_method,
-            total_amount: t.total_amount,
-            items: t.items || [],
-            status: t.status || 'Completed',
-            created_at: t.created_at
-          }));
-        } else {
-          // Fallback to localStorage
-          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-          allTransactions = completedOrders.map((order, index) => {
-            const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
-              sum + (item.price * item.quantity), 0);
-            
-            return {
-              id: order.order_id || `TXN-${Date.now()}-${index}`,
-              order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
-              customer_name: order.customer?.name || 'Unknown Customer',
-              customer_serial: order.customer?.serial || '',
-              customer_number: order.customer?.number || '',
-              payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
-              total_amount: totalAmount,
-              items: order.items || [],
-              status: order.status || 'Completed',
-              created_at: order.completed_at || order.created_at || new Date().toISOString()
-            };
-          });
+        let filteredTransactions = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await initDB();
+                await loadTransactions();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Error initializing:', error);
+                loadFromLocalStorage();
+            }
+        });
+
+        async function loadTransactions() {
+            try {
+                // Try to load from IndexedDB first
+                const dbTransactions = await getAllTransactions();
+                
+                if (dbTransactions && dbTransactions.length > 0) {
+                    allTransactions = dbTransactions.map(t => ({
+                        id: t.id,
+                        order_id: t.order_id,
+                        customer_name: t.customer_name,
+                        customer_serial: t.customer_serial || '',
+                        customer_number: t.customer_number || '',
+                        payment_method: t.payment_method,
+                        total_amount: t.total_amount,
+                        items: t.items || [],
+                        status: t.status || 'Completed',
+                        created_at: t.created_at,
+                        transaction_type: 'Sales Invoice'
+                    }));
+                    
+                    console.log('Loaded transactions from IndexedDB:', allTransactions.length);
+                } else {
+                    // Fallback to localStorage
+                    loadFromLocalStorage();
+                }
+
+                filteredTransactions = [...allTransactions];
+                renderTransactions(filteredTransactions);
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                loadFromLocalStorage();
+            }
         }
-        
-        // Sort by date (newest first) and take top 10
-        const recentTransactions = allTransactions
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 10);
-        
-        displayTransactions(recentTransactions);
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-        // Try localStorage as final fallback
-        try {
-          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-          const allTransactions = completedOrders.map((order, index) => {
-            const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
-              sum + (item.price * item.quantity), 0);
-            
-            return {
-              id: order.order_id || `TXN-${Date.now()}-${index}`,
-              order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
-              customer_name: order.customer?.name || 'Unknown Customer',
-              items: order.items || [],
-              created_at: order.completed_at || order.created_at || new Date().toISOString()
-            };
-          });
-          
-          const recentTransactions = allTransactions
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 10);
-          
-          displayTransactions(recentTransactions);
-        } catch {
-          displayTransactions([]);
+
+        function loadFromLocalStorage() {
+            try {
+                const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                
+                // Transform orders into transaction format
+                allTransactions = completedOrders.map((order, index) => {
+                    const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
+                        sum + (item.price * item.quantity), 0);
+                    
+                    return {
+                        id: order.order_id || `TXN-${Date.now()}-${index}`,
+                        order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
+                        customer_name: order.customer?.name || 'Unknown Customer',
+                        customer_serial: order.customer?.serial || '',
+                        customer_number: order.customer?.number || '',
+                        payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
+                        total_amount: totalAmount,
+                        items: order.items || [],
+                        status: order.status || 'Completed',
+                        created_at: order.completed_at || order.created_at || new Date().toISOString(),
+                        transaction_type: 'Sales Invoice'
+                    };
+                });
+
+                filteredTransactions = [...allTransactions];
+                renderTransactions(filteredTransactions);
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                showEmptyState('Error loading transactions');
+            }
         }
-      }
-    }
 
-    function displayTransactions(transactions) {
-      const div = document.getElementById('transactionList');
-      
-      if (transactions.length === 0) {
-        div.innerHTML = `
-          <div style="text-align:center;padding:40px;color:#999">
-            <i class="bi bi-inbox" style="font-size:48px;display:block;margin-bottom:16px"></i>
-            <p>No transactions yet</p>
-          </div>`;
-        return;
-      }
-      
-      div.innerHTML = transactions.map(tx => {
-        const name = tx.customer_name || tx.customer?.name || 'Unknown';
-        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        const date = new Date(tx.created_at);
-        const dateStr = date.toLocaleDateString('en-US', {month:'2-digit', day:'2-digit', year:'numeric'});
-        const timeStr = date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
-        
-        // Calculate total quantity from items
-        const totalQty = tx.items ? tx.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
-        
-        return `
-          <div class="transaction-item">
-            <div class="transaction-left">
-              <div class="user-avatar">${initials}</div>
-              <div class="transaction-details">
-                <h6>${name}</h6>
-                <p>${dateStr} ${timeStr}</p>
-              </div>
-            </div>
-            <div class="quantity-badge">${totalQty}</div>
-          </div>
-        `;
-      }).join('');
-    }
+        function renderTransactions(transactions) {
+            const container = document.getElementById('transactions-container');
 
-    function updateUserGreeting(user) {
-      const firstName = user.name.split(' ')[0].toUpperCase();
-      document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
-    }
+            if (transactions.length === 0) {
+                showEmptyState('No transactions found');
+                return;
+            }
 
-    // ============================================
-    // LOAD DATA
-    // ============================================
-    (async () => {
-      const user = await getCurrentUser();
-      if (!user) return;
-      
-      updateUserGreeting(user);
-      
-      if (user.role === 'Dealer') {
-        await fetchDealerInfo(user.id);
-      }
-    })();
+            // Group transactions by date
+            const groupedByDate = {};
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.created_at);
+                const dateKey = date.toISOString().split('T')[0];
+                
+                if (!groupedByDate[dateKey]) {
+                    groupedByDate[dateKey] = [];
+                }
+                groupedByDate[dateKey].push(transaction);
+            });
 
-    // ============================================
-    // NETWORK MONITORING
-    // ============================================
-    const networkStatus = document.getElementById('networkStatus');
-    let isOnline = navigator.onLine;
+            // Sort dates in descending order
+            const sortedDates = Object.keys(groupedByDate).sort().reverse();
 
-    function showOfflineAlert() {
-      networkStatus.className = 'network-status offline';
-      networkStatus.textContent = '● Offline Mode';
-      
-      Swal.fire({
-        icon: 'warning',
-        title: 'You are offline',
-        text: 'Your data will sync when connection is restored.',
-        timer: 3000,
-        timerProgressBar: true,
-        confirmButtonColor: '#5BC2E7'
-      });
-    }
+            let html = '';
+            sortedDates.forEach(dateKey => {
+                const dayTransactions = groupedByDate[dateKey];
+                const date = new Date(dateKey);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                const dayTotal = dayTransactions.reduce((sum, t) => sum + t.total_amount, 0);
+                
+                html += `
+                    <div class="transaction-group">
+                        <div class="group-header">
+                            <span class="group-date">${formattedDate}</span>
+                            <span class="group-total">₱${dayTotal.toFixed(2)}</span>
+                        </div>
+                `;
+                
+                dayTransactions.forEach(transaction => {
+                    const time = new Date(transaction.created_at).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    html += `
+                        <div class="transaction-card">
+                            <div class="transaction-details">
+                                <div class="transaction-name">${transaction.customer_name.toUpperCase()}</div>
+                                <div class="transaction-info">${time} - ${transaction.transaction_type}</div>
+                            </div>
+                            <div class="transaction-actions">
+                                <button class="transaction__badge" onclick='openDetailsModal(${JSON.stringify(transaction).replace(/'/g, "&apos;")})'>
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            });
 
-    function showOnlineAlert() {
-      networkStatus.className = 'network-status online';
-      networkStatus.textContent = '● Online';
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Back Online!',
-        showCancelButton: true,
-        confirmButtonText: 'Go Online',
-        cancelButtonText: 'Stay Offline',
-        confirmButtonColor: '#5BC2E7'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
-          window.location.href = `${basePath}/home`;
-        } else {
-          setTimeout(() => {
-            networkStatus.style.display = 'none';
-          }, 2000);
+            container.innerHTML = html;
         }
-      });
-    }
 
-    window.addEventListener('offline', () => {
-      isOnline = false;
-      showOfflineAlert();
-    });
+        function showEmptyState(message) {
+            const container = document.getElementById('transactions-container');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-clock-history"></i>
+                    <h3>${message}</h3>
+                    <p>Complete some orders to see your transaction history</p>
+                </div>
+            `;
+        }
 
-    window.addEventListener('online', () => {
-      if (!isOnline) {
-        isOnline = true;
-        showOnlineAlert();
-      }
-    });
-  </script>
+        function openDetailsModal(transaction) {
+            const modal = document.getElementById('detailsModal');
+            const content = document.getElementById('detailsContent');
+
+            let itemsHtml = '';
+            transaction.items.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                itemsHtml += `
+                    <div class="detail-row">
+                        <span class="detail-label">${item.name} (x${item.quantity})</span>
+                        <span class="detail-value">₱${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-section__title">Transaction Information</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Order ID</span>
+                        <span class="detail-value">${transaction.order_id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date & Time</span>
+                        <span class="detail-value">${new Date(transaction.created_at).toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        })}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">
+                            <span class="status-badge">${transaction.status}</span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Payment Method</span>
+                        <span class="detail-value">
+                            <span class="payment-badge">${transaction.payment_method}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section__title">Customer Details</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Customer Name</span>
+                        <span class="detail-value">${transaction.customer_name}</span>
+                    </div>
+                    ${transaction.customer_serial ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Serial Number</span>
+                            <span class="detail-value">${transaction.customer_serial}</span>
+                        </div>
+                    ` : ''}
+                    ${transaction.customer_number ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Customer Number</span>
+                            <span class="detail-value">${transaction.customer_number}</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section__title">Order Items</div>
+                    ${itemsHtml}
+                    <div class="detail-row">
+                        <span class="detail-label"><strong>Total Amount</strong></span>
+                        <span class="detail-value detail-value--highlight">₱${transaction.total_amount.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function openFilterModal() {
+            document.getElementById('filterModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilterModal() {
+            document.getElementById('filterModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function applyFilter() {
+            const selectedFilter = document.querySelector('input[name="dateFilter"]:checked').value;
+            const now = new Date();
+            now.setHours(23, 59, 59, 999);
+
+            if (selectedFilter === '90days') {
+                const ninetyDaysAgo = new Date(now);
+                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                ninetyDaysAgo.setHours(0, 0, 0, 0);
+                
+                filteredTransactions = allTransactions.filter(transaction => {
+                    const transactionDate = new Date(transaction.created_at);
+                    return transactionDate >= ninetyDaysAgo && transactionDate <= now;
+                });
+            } else if (selectedFilter === 'custom') {
+                const startDateInput = document.getElementById('startDate').value;
+                const endDateInput = document.getElementById('endDate').value;
+                
+                if (!startDateInput || !endDateInput) {
+                    alert('Please select both start and end dates');
+                    return;
+                }
+                
+                const startDate = new Date(startDateInput);
+                startDate.setHours(0, 0, 0, 0);
+                
+                const endDate = new Date(endDateInput);
+                endDate.setHours(23, 59, 59, 999);
+                
+                if (startDate > endDate) {
+                    alert('Start date must be before end date');
+                    return;
+                }
+                
+                filteredTransactions = allTransactions.filter(transaction => {
+                    const transactionDate = new Date(transaction.created_at);
+                    return transactionDate >= startDate && transactionDate <= endDate;
+                });
+            }
+
+            renderTransactions(filteredTransactions);
+            closeFilterModal();
+        }
+
+        function setupEventListeners() {
+            const radioButtons = document.querySelectorAll('input[name="dateFilter"]');
+            const dateRangeSection = document.getElementById('dateRangeSection');
+
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        dateRangeSection.classList.add('active');
+                    } else {
+                        dateRangeSection.classList.remove('active');
+                    }
+                });
+            });
+
+            document.getElementById('filterModal').addEventListener('click', function(e) {
+                if (e.target === this) closeFilterModal();
+            });
+
+            document.getElementById('detailsModal').addEventListener('click', function(e) {
+                if (e.target === this) closeDetailsModal();
+            });
+        }
+    </script>
 </body>
 </html>
