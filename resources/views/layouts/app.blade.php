@@ -887,11 +887,6 @@ function initCRMSDB() {
         db.createObjectStore('clients', { keyPath: 'id' });
       }
       
-      // Create transaction_details store if it doesn't exist
-      if (!db.objectStoreNames.contains('transaction_details')) {
-        db.createObjectStore('transaction_details', { keyPath: 'id' });
-      }
-      
       // Create stoves store if it doesn't exist
       if (!db.objectStoreNames.contains('stoves')) {
         db.createObjectStore('stoves', { keyPath: 'id' });
@@ -1068,56 +1063,6 @@ async function saveClientsToIndexedDB() {
   }
 }
 
-// Save transactions to IndexedDB with null handling
-async function saveTransactionsToIndexedDB() {
-  try {
-    console.log('📡 Fetching transactions from API...');
-    const response = await fetch('/api/get-transactions');
-    if (!response.ok) throw new Error('HTTP error ' + response.status);
-    
-    const transactions = await response.json();
-    console.log('📥 Fetched transactions:', transactions.length);
-    
-    // Handle null values - convert to empty strings
-    const cleanedTransactions = transactions.map(transaction => {
-      const cleanTransaction = {};
-      for (const [key, value] of Object.entries(transaction)) {
-        cleanTransaction[key] = value === null ? '' : value;
-      }
-      return cleanTransaction;
-    });
-    
-    console.log('🧹 Cleaned transactions:', cleanedTransactions.length);
-    
-    const db = await initCRMSDB();
-    const tx = db.transaction('transaction_details', 'readwrite');
-    const store = tx.objectStore('transaction_details');
-    
-    // Clear existing data
-    store.clear();
-    
-    // Add each transaction
-    cleanedTransactions.forEach(transaction => {
-      try {
-        store.put(transaction);
-      } catch (err) {
-        console.error('Error saving transaction:', transaction.id, err);
-      }
-    });
-    
-    tx.oncomplete = () => {
-      console.log('✅ Transactions saved to IndexedDB:', cleanedTransactions.length, 'records');
-    };
-    
-    tx.onerror = (e) => {
-      console.error('❌ Transaction error saving transactions:', e.target.error);
-    };
-    
-  } catch (err) {
-    console.error('❌ Error saving transactions:', err);
-  }
-}
-
 // Save stoves to IndexedDB with null handling
 async function saveStovesToIndexedDB() {
   try {
@@ -1236,7 +1181,6 @@ async function saveAllDataToIndexedDB() {
     await saveUsersToIndexedDB();
     await saveDealersToIndexedDB();
     await saveClientsToIndexedDB();
-    await saveTransactionsToIndexedDB();
     await saveStovesToIndexedDB();
     await saveItemsToIndexedDB();
     console.log('✅ IndexedDB sync completed!');
