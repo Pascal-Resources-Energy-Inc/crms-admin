@@ -1,21 +1,8 @@
-// =============================================================
-// BULLETPROOF Service Worker - With Laravel Assets Support
-// =============================================================
-
-const CACHE_VERSION = 'v5'; // Increment version
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `gazlite-pwa-${CACHE_VERSION}`;
+const BASE_PATH = self.registration.scope.includes('/crms/public') ? '/crms/public' : '';
 
-const BASE_PATH = self.registration.scope.includes('/crms/public') 
-  ? '/crms/public' 
-  : '';
-
-console.log('[SW] 🚀 Service Worker Starting');
-console.log('[SW] 📦 Cache:', CACHE_NAME);
-console.log('[SW] 📂 Base Path:', BASE_PATH);
-
-// ALL offline files that MUST be cached
 const OFFLINE_URLS = [
-  // Offline Pages
   `${BASE_PATH}/pwa-launcher.html`,
   `${BASE_PATH}/offline/login.html`,
   `${BASE_PATH}/offline/home.html`,
@@ -26,7 +13,6 @@ const OFFLINE_URLS = [
   `${BASE_PATH}/offline/account.html`,
   `${BASE_PATH}/offline/offline.js`,
   
-  // Images
   `${BASE_PATH}/images/logo_sa_labas.png`,
   `${BASE_PATH}/images/human.png`,
   `${BASE_PATH}/images/context.png`,
@@ -38,7 +24,6 @@ const OFFLINE_URLS = [
   `${BASE_PATH}/images/icons/logo_nya_192.png`,
   `${BASE_PATH}/images/icons/logo_nya_512.png`,
   
-  // CDN Resources
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js",
   "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
@@ -46,7 +31,6 @@ const OFFLINE_URLS = [
   "https://cdn.jsdelivr.net/npm/sweetalert2@11",
   "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css",
   
-  // ✅ ADD Laravel Assets (if home.html needs them)
   `${BASE_PATH}/inside_css/assets/js/layout.js`,
   `${BASE_PATH}/inside_css/assets/css/bootstrap.min.css`,
   `${BASE_PATH}/inside_css/assets/css/icons.min.css`,
@@ -63,119 +47,79 @@ const OFFLINE_URLS = [
   `${BASE_PATH}/inside_css/assets/js/pages/password-addon.init.js`
 ];
 
-// Routes that should NOT be cached
-const ONLINE_ONLY_ROUTES = [
-  '/home',
-  '/login',
-  '/products',
-  '/cart',
-  '/transaction',
-  '/account',
-  '/dashboard',
-  '/dealer',
-  '/client'
-];
+const ONLINE_ONLY_ROUTES = ['/home', '/login', '/products', '/cart', '/transaction', '/account', '/dashboard', '/dealer', '/client'];
+const SKIP_PATHS = ['/vendor/', '/node_modules/', '/api/', '/_debugbar/', '/livewire/'];
+const NETWORK_TIMEOUT = 2000;
 
-// ==========================================
-// INSTALL
-// ==========================================
+const OFFLINE_PAGE_MAP = {
+  '/home': 'home.html',
+  '/products': 'products.html',
+  '/cart': 'cart.html',
+  '/transaction': 'transaction.html',
+  '/account': 'account.html'
+};
+
+console.log('[SW] Service Worker Starting - Cache:', CACHE_NAME, '| Base:', BASE_PATH);
+
 self.addEventListener('install', event => {
-  console.log('[SW] 📥 Installing...');
+  console.log('[SW] Installing...');
   
   event.waitUntil(
-    (async () => {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        console.log('[SW] ✅ Cache opened:', CACHE_NAME);
-        
-        let success = 0;
-        let failed = 0;
-        
-        for (const url of OFFLINE_URLS) {
-          try {
-            const response = await fetch(url, {
-              cache: 'reload',
-              credentials: 'same-origin'
-            });
-            
-            if (response && response.ok) {
-              await cache.put(url, response);
-              success++;
-              console.log(`[SW] ✅ Cached (${success}/${OFFLINE_URLS.length}): ${url}`);
-            } else {
-              failed++;
-              console.warn(`[SW] ⚠️ Failed (${response.status}): ${url}`);
-            }
-          } catch (error) {
+    caches.open(CACHE_NAME).then(async cache => {
+      let success = 0, failed = 0;
+      
+      for (const url of OFFLINE_URLS) {
+        try {
+          const response = await fetch(url, { cache: 'reload', credentials: 'same-origin' });
+          
+          if (response?.ok) {
+            await cache.put(url, response);
+            success++;
+          } else {
             failed++;
-            console.error(`[SW] ❌ Error: ${url}`, error.message);
+            console.warn(`[SW] Failed (${response.status}):`, url);
           }
+        } catch (error) {
+          failed++;
+          console.error('[SW] Error caching:', url, error.message);
         }
-        
-        console.log(`[SW] 📊 Cache: ${success} success, ${failed} failed`);
-        
-      } catch (error) {
-        console.error('[SW] ❌ Install failed:', error);
       }
-    })()
+      
+      console.log(`[SW] Cached: ${success} succeeded, ${failed} failed`);
+    }).catch(error => console.error('[SW] Install failed:', error))
   );
   
   self.skipWaiting();
 });
 
-// ==========================================
-// ACTIVATE
-// ==========================================
 self.addEventListener('activate', event => {
-  console.log('[SW] ⚡ Activating...');
+  console.log('[SW] Activating...');
   
   event.waitUntil(
-    (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(
+    caches.keys().then(cacheNames => 
+      Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName.startsWith('gazlite-pwa-') && cacheName !== CACHE_NAME) {
-            console.log('[SW] 🗑️ Deleting old cache:', cacheName);
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
-      );
-      
-      await self.clients.claim();
-      console.log('[SW] ✅ Service Worker controlling all pages');
-    })()
+      )
+    ).then(() => {
+      console.log('[SW] Service Worker active');
+      return self.clients.claim();
+    })
   );
 });
 
-// ==========================================
-// FETCH
-// ==========================================
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
   
-  if (!url.protocol.startsWith('http') || url.protocol === 'chrome-extension:') {
-    return;
-  }
-  
-  const pathname = url.pathname;
-  
-  // ✅ MODIFIED: Don't skip /inside_css/ anymore - handle it
-  const skipPaths = [
-    // '/inside_css/', ← REMOVED
-    '/vendor/',
-    '/node_modules/',
-    '/api/',
-    '/_debugbar/',
-    '/livewire/'
-  ];
-  
-  if (skipPaths.some(path => pathname.includes(path))) {
-    console.log('[SW] ⏭️ Ignoring:', pathname);
-    return;
-  }
-  
-  if (request.method !== 'GET') {
+  if (!url.protocol.startsWith('http') || 
+      url.protocol === 'chrome-extension:' ||
+      SKIP_PATHS.some(path => url.pathname.includes(path)) ||
+      request.method !== 'GET') {
     return;
   }
   
@@ -184,75 +128,44 @@ self.addEventListener('fetch', event => {
 
 async function handleFetch(request) {
   const url = new URL(request.url);
-  const pathname = url.pathname;
-  
-  console.log('[SW] 🔍 Handling:', pathname);
-  
   const isNavigation = request.mode === 'navigate' || 
-                       (request.method === 'GET' && 
-                        request.headers.get('accept')?.includes('text/html'));
+                       (request.headers.get('accept')?.includes('text/html'));
   
-  if (isNavigation) {
-    return handleNavigation(request, url);
-  } else {
-    return handleAsset(request, url);
-  }
+  return isNavigation ? handleNavigation(request, url) : handleAsset(request, url);
 }
 
 async function handleNavigation(request, url) {
   const pathname = url.pathname;
-  console.log('[SW] 🧭 Navigation:', pathname);
-  
   const isOnlineRoute = ONLINE_ONLY_ROUTES.some(route => pathname.includes(route));
   
   try {
     const networkResponse = await Promise.race([
       fetch(request),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 2000)
-      )
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT))
     ]);
-    
-    console.log('[SW] ✅ Network OK');
     
     if (!isOnlineRoute && networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
+      cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
     
   } catch (error) {
-    console.log('[SW] ❌ Offline, serving cache');
+    console.log('[SW] Offline - serving cached page');
     
     let offlineFile = 'login.html';
-    
-    if (pathname.includes('/home') || pathname === '/' || pathname === BASE_PATH + '/') {
-      offlineFile = 'home.html';
-    } else if (pathname.includes('/products')) {
-      offlineFile = 'products.html';
-    } else if (pathname.includes('/cart')) {
-      offlineFile = 'cart.html';
-    } else if (pathname.includes('/transaction')) {
-      offlineFile = 'transaction.html';
-    } else if (pathname.includes('/account')) {
-      offlineFile = 'account.html';
+    for (const [route, file] of Object.entries(OFFLINE_PAGE_MAP)) {
+      if (pathname.includes(route) || (route === '/home' && (pathname === '/' || pathname === BASE_PATH + '/'))) {
+        offlineFile = file;
+        break;
+      }
     }
     
     const offlineUrl = `${BASE_PATH}/offline/${offlineFile}`;
-    let cachedResponse = await caches.match(offlineUrl);
+    const cachedResponse = await caches.match(offlineUrl) || await caches.match(request);
     
-    if (cachedResponse) {
-      console.log('[SW] ✅ Serving:', offlineFile);
-      return cachedResponse;
-    }
-    
-    cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    return new Response('Offline - Page not cached', {
+    return cachedResponse || new Response('Offline - Page not cached', {
       status: 503,
       headers: { 'Content-Type': 'text/html' }
     });
@@ -264,32 +177,26 @@ async function handleAsset(request, url) {
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
-      console.log('[SW] 💾 From cache:', url.pathname);
-      
-      // Update in background
       fetch(request).then(response => {
-        if (response && response.ok) {
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(request, response);
-          });
+        if (response?.ok) {
+          caches.open(CACHE_NAME).then(cache => cache.put(request, response));
         }
       }).catch(() => {});
       
       return cachedResponse;
     }
     
-    console.log('[SW] 🌐 Fetching:', url.pathname);
     const networkResponse = await fetch(request);
     
-    if (networkResponse && networkResponse.ok) {
+    if (networkResponse?.ok) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
+      cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
     
   } catch (error) {
-    console.log('[SW] ⚠️ Asset unavailable:', url.pathname);
+    console.log('[SW] Asset unavailable:', url.pathname);
     return new Response('Offline', { status: 503 });
   }
 }
@@ -300,4 +207,4 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('[SW] ✅ Service Worker Loaded');
+console.log('[SW] Service Worker Loaded');
