@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,7 +46,6 @@
       padding-bottom: 100px;
     }
 
-    /* Top Header Styles */
     .top-header {
       position: fixed;
       top: 0;
@@ -79,28 +77,6 @@
       display: flex;
       align-items: center;
       gap: 12px;
-    }
-
-    .notification-icon {
-      width: 44px;
-      height: 44px;
-      background: #5BC2E7;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .notification-icon:hover {
-      background: #4facfe;
-      transform: scale(1.05);
-    }
-
-    .notification-icon i {
-      font-size: 20px;
-      color: white;
     }
 
     .points-badge {
@@ -135,16 +111,6 @@
       min-height: calc(100vh - 180px);
     }
 
-    /* Welcome Section */
-    .welcome {
-      margin-bottom: 24px;
-    }
-
-    .welcome-dealer {
-      margin-bottom: 24px;
-    }
-
-    /* Card styling matching blade */
     .card {
       margin-bottom: 20px;
       background: white;
@@ -156,10 +122,6 @@
     .card-body {
       padding: 20px;
       position: relative;
-    }
-
-    .stretch {
-      width: 100%;
     }
 
     .dealer-info {
@@ -202,36 +164,6 @@
       margin-bottom: 8px;
     }
 
-    .show-entries {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      margin-bottom: 16px;
-      gap: 8px;
-    }
-
-    .show-entries label,
-    .show-entries span {
-      font-size: 14px;
-      color: #6c757d;
-      margin-bottom: 0;
-    }
-
-    .show-entries select {
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 14px;
-      outline: none;
-      width: auto;
-      min-width: 80px;
-    }
-
-    /* Transaction Cards - FIXED */
-    .transaction-card {
-      background: transparent;
-    }
-
     .transaction-list {
       max-height: 500px;
       overflow-y: auto;
@@ -244,7 +176,6 @@
       padding: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       border: 1px solid #e2e8f0;
-      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -271,19 +202,6 @@
       font-weight: 700;
       font-size: 20px;
       flex-shrink: 0;
-      border: 2px solid #e2e8f0;
-    }
-
-    .avatar-circle {
-      width: 55px;
-      height: 55px;
-    }
-
-    .avatar-circle img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
       border: 2px solid #e2e8f0;
     }
 
@@ -322,93 +240,6 @@
       flex-shrink: 0;
     }
 
-    /* Sync Button Styles */
-    .sync-btn {
-      background: linear-gradient(135deg, #5BC2E7 0%, #4facfe 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 24px;
-      font-weight: 600;
-      font-size: 14px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(91, 194, 231, 0.3);
-      margin-bottom: 16px;
-    }
-
-    .sync-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(91, 194, 231, 0.4);
-    }
-
-    .sync-btn:disabled {
-      background: #6c757d;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .sync-btn i {
-      font-size: 18px;
-    }
-
-    .sync-btn.syncing i {
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .sync-status {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .sync-status .status-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .sync-status .status-item:last-child {
-      border-bottom: none;
-    }
-
-    .sync-status .label {
-      font-size: 13px;
-      color: #6c757d;
-      font-weight: 500;
-    }
-
-    .sync-status .value {
-      font-size: 14px;
-      color: #2c3e50;
-      font-weight: 600;
-    }
-
-    .sync-status .value.success {
-      color: #28a745;
-    }
-
-    .sync-status .value.error {
-      color: #dc3545;
-    }
-
-    .sync-status .value.pending {
-      color: #ffc107;
-    }
-
-    /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -433,7 +264,6 @@
       color: #999;
       font-size: 11px;
       height: 100%;
-      position: relative;
     }
 
     .nav-item i {
@@ -443,42 +273,6 @@
 
     .nav-item.active {
       color: #5BC2E7;
-    }
-
-    .scan-button {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 65px;
-      height: 65px;
-      background: linear-gradient(135deg, #5BC2E7 0%, #4facfe 100%);
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 5px solid white;
-      box-shadow: 0 4px 12px rgba(91, 194, 231, 0.3);
-      z-index: 1001;
-      cursor: pointer;
-    }
-
-    .scan-button i {
-      font-size: 26px;
-      color: white;
-      margin-bottom: 2px;
-    }
-
-    .scan-button span {
-      font-size: 10px;
-      color: #5BC2E7;
-      font-weight: 600;
-      background: white;
-      padding: 2px 8px;
-      border-radius: 10px;
-      position: absolute;
-      bottom: -18px;
     }
 
     .network-status {
@@ -505,56 +299,20 @@
       display: block;
     }
 
-    /* Responsive */
     @media (max-width: 576px) {
-      .main-content-wrapper {
-        padding: 15px 12px 100px 12px;
-      }
-
       .school-img {
         width: 140px !important;
-        max-height: 100px;
       }
       
       .school-img img {
         max-height: 100px;
       }
-
-      .form-select-sm {
-        font-size: 0.875rem;
-      }
-
-      .top-header {
-        padding: 12px;
-        height: 70px;
-      }
-
-      .user-greeting h6 {
-        font-size: 16px;
-      }
-
-      .points-badge {
-        padding: 6px 12px;
-      }
-
-      .points-text {
-        font-size: 12px;
-      }
     }
   </style>
 </head>
-<script>
-(function() {
-    const offlineUser = localStorage.getItem('offlineUser');
-    const currentUserId = localStorage.getItem('current_user_id');
-    
-    if (!offlineUser && !currentUserId) {
-        window.location.replace('login.html');
-    }
-})();
-</script>
+
 <body>
-  <!-- Network Status Indicator -->
+  <!-- Network Status -->
   <div class="network-status" id="networkStatus"></div>
 
   <!-- Top Header -->
@@ -573,13 +331,12 @@
     </div>
   </div>
 
-  <!-- Main Content Wrapper -->
+  <!-- Main Content -->
   <div class="main-content-wrapper">
-    <!-- Welcome Section for Dealer -->
     <section class="welcome welcome-dealer">
       <div class="row">    
-        <div class="col-lg-10 col-xl-12 text-left mb-4">
-          <div class="card w-100 stretch">
+        <div class="col-12 mb-4">
+          <div class="card">
             <div class="card-body">
               <div class="dealer-info" id="dealerInfo">
                 <p><strong>Dealer ID:</strong> N/A</p>
@@ -588,65 +345,21 @@
                 <p><strong>Registered:</strong> N/A</p>
               </div>
               <div class="school-img">
-                <img src="../images/background.png" alt="Role Selection Context" class="img-fluid">
+                <img src="../images/background.png" alt="Background">
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Sync Button and Status -->
-      <div class="row mb-3">
+      
+      <h5 class="mb-3 section-title">Latest Transaction</h5>
+      
+      <div class="row">
         <div class="col-12">
-          <button class="sync-btn d-none" id="syncButton" onclick="syncOfflineTransactions()">
-            <i class="bi bi-cloud-arrow-up"></i>
-            <span>Sync Offline Transactions</span>
-          </button>
-          
-          <div class="sync-status d-none" id="syncStatus">
-            <div class="status-item">
-              <span class="label">Pending Transactions:</span>
-              <span class="value pending" id="pendingCount">0</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Synced Successfully:</span>
-              <span class="value success" id="syncedCount">0</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Failed to Sync:</span>
-              <span class="value error" id="failedCount">0</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Last Sync:</span>
-              <span class="value" id="lastSync">Never</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <h5 class="mb-2 fw-bold section-title">Latest Transaction</h5>
-      
-      <div class="row mt-3">
-        <div class="col-lg-12">
-          <div class="w-100">
-            <div class="transaction-card">
-              <div class="d-flex justify-content-end align-items-center mb-3 show-entries">
-                <label for="showEntries" class="me-2">Show</label>
-                <select id="showEntries" class="form-select form-select-sm">
-                  <option value="10" selected>10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-                <span class="ms-2">entries</span>
-              </div>
-
-              <div class="transaction-list" id="transactionList">
-                <div class="text-center py-4">
-                  <i class="bi bi-hourglass-split" style="font-size: 48px; margin-bottom: 16px; display: block; color: #999;"></i>
-                  <p style="color: #6c757d;">Loading transactions...</p>
-                </div>
-              </div>
+          <div class="transaction-list" id="transactionList">
+            <div class="text-center py-4">
+              <i class="bi bi-hourglass-split" style="font-size: 48px; color: #999;"></i>
+              <p style="color: #6c757d; margin-top: 16px;">Loading transactions...</p>
             </div>
           </div>
         </div>
@@ -664,11 +377,6 @@
       <i class="bi bi-bag"></i>
       <span>Products</span>
     </a>
-    <div class="scan-button">
-      <i class="bi bi-upc-scan"></i>
-      <span>Scan</span>
-    </div>
-    <div style="width: 70px;"></div>
     <a href="transaction.html" class="nav-item">
       <i class="bi bi-clock-history"></i>
       <span>History</span>
@@ -679,41 +387,98 @@
     </a>
   </nav>
 
-  <!-- SweetAlert2 JS -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/offline/offline.js"></script>
 
-
   <script>
     // ============================================
-    // SIMPLIFIED INDEXEDDB DATA FETCHING
+    // SERVICE WORKER REGISTRATION - FIRST!
     // ============================================
+    (function() {
+      'use strict';
+      
+      if (!('serviceWorker' in navigator)) {
+        console.warn('❌ Service Worker not supported');
+        return;
+      }
+      
+      const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+      const swPath = `${basePath}/sw.js`; // ✅ CORRECT FILE NAME
+      
+      console.log('🔧 Registering Service Worker:', swPath);
+      
+      navigator.serviceWorker.register(swPath, { scope: basePath || '/' })
+        .then(registration => {
+          console.log('✅ Service Worker registered');
+          
+          if (!navigator.serviceWorker.controller) {
+            console.warn('⚠️ No controller yet');
+          } else {
+            console.log('✅ SW controlling page');
+          }
+          
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            console.log('🔄 SW update found');
+            
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('🆕 New version available');
+              }
+            });
+          });
+        })
+        .catch(error => {
+          console.error('❌ SW registration failed:', error);
+        });
+      
+      // Handle SW messages (for auth check)
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data?.type === 'CHECK_AUTH') {
+          const currentUserId = localStorage.getItem('current_user_id');
+          const offlineUser = localStorage.getItem('offlineUser');
+          const authenticated = !!(currentUserId || offlineUser);
+          event.ports[0].postMessage({ authenticated });
+        }
+      });
+    })();
 
+    // ============================================
+    // AUTH CHECK
+    // ============================================
+    (function() {
+      const offlineUser = localStorage.getItem('offlineUser');
+      const currentUserId = localStorage.getItem('current_user_id');
+      
+      if (!offlineUser && !currentUserId) {
+        window.location.replace('login.html');
+      }
+    })();
+
+    // ============================================
+    // INDEXEDDB FUNCTIONS
+    // ============================================
     function openCRMSDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open('CRMSDB', 3);
         request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject('IndexedDB error: ' + event.target.error);
+        request.onerror = (event) => reject('IndexedDB error');
       });
     }
 
     async function getCurrentUser() {
       try {
-        // Check both localStorage formats
         let currentUserId = localStorage.getItem('current_user_id');
         
-        // Try to get from offlineUser if not found
         if (!currentUserId) {
           const offlineUser = localStorage.getItem('offlineUser');
           if (offlineUser) {
-            const userData = JSON.parse(offlineUser);
-            currentUserId = userData.id;
-            console.log('✅ Got user ID from offlineUser:', currentUserId);
+            currentUserId = JSON.parse(offlineUser).id;
           }
         }
         
         if (!currentUserId) {
-          console.error('❌ No user found in localStorage');
           window.location.href = 'login.html';
           return null;
         }
@@ -721,26 +486,22 @@
         const db = await openCRMSDB();
         const tx = db.transaction('users', 'readonly');
         const store = tx.objectStore('users');
-        const request = store.get(parseInt(currentUserId));
         
         return new Promise((resolve) => {
+          const request = store.get(parseInt(currentUserId));
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => {
-            console.error('❌ Error fetching user');
             window.location.href = 'login.html';
           };
         });
-        
       } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
         window.location.href = 'login.html';
         return null;
       }
     }
 
     async function fetchDealerInfo(userId) {
-      console.log('🔍 Fetching dealer info for user ID:', userId);
-      
       const db = await openCRMSDB();
       const tx = db.transaction('dealers', 'readonly');
       const store = tx.objectStore('dealers');
@@ -749,17 +510,16 @@
         request.onsuccess = () => resolve(request.result);
       });
       
-      console.log('📊 Total dealers in DB:', dealers.length);
-      console.log('👥 All dealers:', dealers);
-      
       const dealer = dealers.find(d => d.user_id === userId);
-      
-      console.log('🎯 Found dealer:', dealer);
       
       if (dealer) {
         const year = new Date(dealer.created_at).getFullYear();
         const dealerId = `${year}-${dealer.id}`;
-        const regDate = new Date(dealer.created_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+        const regDate = new Date(dealer.created_at).toLocaleDateString('en-US', {
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric'
+        });
         
         document.getElementById('dealerInfo').innerHTML = `
           <p><strong>Dealer ID:</strong> ${dealerId}</p>
@@ -768,15 +528,10 @@
           <p><strong>Registered:</strong> ${regDate}</p>
         `;
         
-        console.log('✅ Dealer card updated');
-        
         const points = await calculateDealerPoints(userId);
         document.getElementById('pointsDisplay').textContent = `${Math.round(points)} points`;
         
         await loadDealerTransactions(userId);
-      } else {
-        console.error('❌ No dealer found with user_id:', userId);
-        console.log('💡 Available user_ids:', dealers.map(d => d.user_id));
       }
     }
 
@@ -794,14 +549,7 @@
         .reduce((sum, t) => sum + (parseFloat(t.points_dealer) || 0), 0);
     }
 
-    function updateUserGreeting(user) {
-      const firstName = user.name.split(' ')[0].toUpperCase();
-      document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
-    }
-
-    async function loadDealerTransactions(userId, limit = 10) {
-      console.log('🔍 Loading transactions for user ID:', userId, 'limit:', limit);
-      
+    async function loadDealerTransactions(userId) {
       const db = await openCRMSDB();
       
       const txTrans = db.transaction('transaction_details', 'readonly');
@@ -811,8 +559,6 @@
         request.onsuccess = () => resolve(request.result);
       });
       
-      console.log('📊 Total transactions in DB:', allTransactions.length);
-      
       const txClients = db.transaction('clients', 'readonly');
       const clientStore = txClients.objectStore('clients');
       const clients = await new Promise((resolve) => {
@@ -820,17 +566,10 @@
         request.onsuccess = () => resolve(request.result);
       });
       
-      console.log('📊 Total clients in DB:', clients.length);
-      
       const dealerTransactions = allTransactions
-        .filter(t => {
-          console.log(`Transaction ${t.id}: dealer_id=${t.dealer_id}, userId=${userId}, match=${t.dealer_id == userId}`);
-          return t.dealer_id == userId;
-        })
+        .filter(t => t.dealer_id == userId)
         .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date))
-        .slice(0, limit);
-      
-      console.log('✅ Filtered transactions for dealer:', dealerTransactions.length);
+        .slice(0, 10);
       
       displayTransactions(dealerTransactions, clients);
     }
@@ -839,7 +578,11 @@
       const div = document.getElementById('transactionList');
       
       if (transactions.length === 0) {
-        div.innerHTML = '<div style="text-align:center;padding:40px;color:#999"><i class="bi bi-inbox" style="font-size:48px;display:block;margin-bottom:16px"></i><p>No transactions yet</p></div>';
+        div.innerHTML = `
+          <div style="text-align:center;padding:40px;color:#999">
+            <i class="bi bi-inbox" style="font-size:48px;display:block;margin-bottom:16px"></i>
+            <p>No transactions yet</p>
+          </div>`;
         return;
       }
       
@@ -857,7 +600,7 @@
               <div class="user-avatar">${initials}</div>
               <div class="transaction-details">
                 <h6>${name}</h6>
-                <p>${dateStr}  ${timeStr}</p>
+                <p>${dateStr} ${timeStr}</p>
               </div>
             </div>
             <div class="quantity-badge">${tx.qty || 0}</div>
@@ -866,12 +609,14 @@
       }).join('');
     }
 
-    document.getElementById('showEntries')?.addEventListener('change', async (e) => {
-      const userId = localStorage.getItem('current_user_id') || JSON.parse(localStorage.getItem('offlineUser') || '{}').id;
-      if (userId) await loadDealerTransactions(parseInt(userId), parseInt(e.target.value));
-    });
+    function updateUserGreeting(user) {
+      const firstName = user.name.split(' ')[0].toUpperCase();
+      document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
+    }
 
-    // Load data immediately
+    // ============================================
+    // LOAD DATA
+    // ============================================
     (async () => {
       const user = await getCurrentUser();
       if (!user) return;
@@ -884,83 +629,10 @@
     })();
 
     // ============================================
-    // NETWORK STATUS MONITORING
+    // NETWORK MONITORING
     // ============================================
     const networkStatus = document.getElementById('networkStatus');
     let isOnline = navigator.onLine;
-
-    async function checkNetworkConnection() {
-      if (!navigator.onLine) return false;
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch('https://cloudflare.com/cdn-cgi/trace', {
-          method: 'GET',
-          cache: 'no-store',
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        return response.ok;
-      } catch (error) {
-        return false;
-      }
-    }
-
-    async function updateConnectionStatus(showAlert = true) {
-      const actuallyOnline = await checkNetworkConnection();
-      
-      if (!actuallyOnline && isOnline) {
-          isOnline = false;
-          if (showAlert) {
-              showOfflineAlert();
-          } else {
-              networkStatus.className = 'network-status offline';
-              networkStatus.textContent = '● Offline Mode';
-          }
-          
-          // Remove "Go Online" button if exists
-          const btn = document.getElementById('goOnlineBtn');
-          if (btn) btn.remove();
-          
-      } else if (actuallyOnline && !isOnline) {
-          isOnline = true;
-          if (showAlert) {
-              showOnlineAlert();
-          } else {
-              networkStatus.style.display = 'none';
-          }
-          
-          showGoOnlineButton();
-          
-      } else if (!actuallyOnline) {
-          networkStatus.className = 'network-status offline';
-          networkStatus.textContent = '● Offline Mode';
-      }
-  }
-
-    updateConnectionStatus(false);
-
-    setInterval(() => {
-      updateConnectionStatus(true);
-    }, 10000);
-
-    window.addEventListener('offline', () => {
-      isOnline = false;
-      networkStatus.className = 'network-status offline';
-      networkStatus.textContent = '● Offline Mode';
-      showOfflineAlert();
-    });
-
-    window.addEventListener('online', async () => {
-      const actuallyOnline = await checkNetworkConnection();
-      if (actuallyOnline) {
-        isOnline = true;
-        showOnlineAlert();
-      }
-    });
 
     function showOfflineAlert() {
       networkStatus.className = 'network-status offline';
@@ -969,377 +641,47 @@
       Swal.fire({
         icon: 'warning',
         title: 'You are offline',
-        text: 'Some features may be limited. Your data will sync when connection is restored.',
-        iconColor: '#ff4757',
-        confirmButtonColor: '#5BC2E7',
-        confirmButtonText: 'OK',
-        timer: 5000,
-        timerProgressBar: true
+        text: 'Your data will sync when connection is restored.',
+        timer: 3000,
+        timerProgressBar: true,
+        confirmButtonColor: '#5BC2E7'
       });
     }
 
     function showOnlineAlert() {
-        networkStatus.className = 'network-status online';
-        networkStatus.textContent = '● Online';
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Back Online!',
-            html: `
-                <p style="font-size: 16px; margin-bottom: 10px;">Your connection has been restored.</p>
-                <p style="font-size: 14px; color: #666;">Would you like to switch to online mode?</p>
-            `,
-            iconColor: '#2ecc71',
-            showCancelButton: true,
-            confirmButtonColor: '#5BC2E7',
-            cancelButtonColor: '#95a5a6',
-            confirmButtonText: '<i class="bi bi-wifi"></i> Go Online',
-            cancelButtonText: '<i class="bi bi-x-circle"></i> Stay Offline',
-            allowOutsideClick: false,
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // User clicked "Go Online" - redirect to online version
-                Swal.fire({
-                    title: 'Switching to Online Mode',
-                    html: 'Redirecting to online dashboard...',
-                    timer: 1500,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                }).then(() => {
-                      const basePath = window.location.pathname.includes('/crms/public') 
-                          ? '/crms/public' 
-                          : '';
-
-                      const userToken = localStorage.getItem('token');
-
-                      if (userToken) {
-                          window.location.href = `${basePath}/home`;
-                      } else {
-                          window.location.href = `${basePath}/login`;
-                      }
-                  });
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Staying Offline',
-                    text: 'You can continue using offline mode. Switch to online anytime.',
-                    confirmButtonColor: '#5BC2E7',
-                    timer: 3000,
-                    timerProgressBar: true
-                });
-
-                setTimeout(() => {
-                    networkStatus.style.display = 'none';
-                }, 3000);
-            }
-        });
-    }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(reg => console.log('✅ Service Worker registered!', reg))
-        .catch(err => console.error('❌ Service Worker failed:', err));
-    }
-  </script>
-  <script>
-    // ============================================
-// CACHE DIAGNOSTIC TOOL
-// Add this script to your home.html to debug caching
-// ============================================
-
-// Add a floating debug button (only in development)
-function addDebugButton() {
-  const debugBtn = document.createElement('button');
-  debugBtn.id = 'cacheDebugBtn';
-  debugBtn.innerHTML = '🔍 Cache';
-  debugBtn.style.cssText = `
-    position: fixed;
-    bottom: 80px;
-    right: 10px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #ff6b6b;
-    color: white;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    font-size: 12px;
-    font-weight: bold;
-  `;
-  
-  debugBtn.addEventListener('click', showCacheDebugInfo);
-  document.body.appendChild(debugBtn);
-}
-
-// Show detailed cache information
-async function showCacheDebugInfo() {
-  try {
-    // Check if service worker is registered
-    if (!navigator.serviceWorker.controller) {
+      networkStatus.className = 'network-status online';
+      networkStatus.textContent = '● Online';
+      
       Swal.fire({
-        icon: 'error',
-        title: 'No Service Worker',
-        text: 'Service worker is not controlling this page. Try refreshing.',
+        icon: 'success',
+        title: 'Back Online!',
+        showCancelButton: true,
+        confirmButtonText: 'Go Online',
+        cancelButtonText: 'Stay Offline',
         confirmButtonColor: '#5BC2E7'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+          window.location.href = `${basePath}/home`;
+        } else {
+          setTimeout(() => {
+            networkStatus.style.display = 'none';
+          }, 2000);
+        }
       });
-      return;
     }
-    
-    // Request cache info from service worker
-    const channel = new MessageChannel();
-    
-    const cacheInfo = await new Promise((resolve) => {
-      channel.port1.onmessage = (event) => {
-        resolve(event.data);
-      };
-      
-      navigator.serviceWorker.controller.postMessage(
-        { type: 'CHECK_CACHE' },
-        [channel.port2]
-      );
-      
-      // Timeout after 3 seconds
-      setTimeout(() => resolve(null), 3000);
+
+    window.addEventListener('offline', () => {
+      isOnline = false;
+      showOfflineAlert();
     });
-    
-    if (!cacheInfo) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'No Response',
-        text: 'Service worker did not respond. Check console.',
-        confirmButtonColor: '#5BC2E7'
-      });
-      return;
-    }
-    
-    // Check what offline pages are cached
-    const offlinePages = cacheInfo.urls.filter(url => url.includes('/offline/'));
-    const hasLogin = offlinePages.some(url => url.includes('login.html'));
-    const hasHome = offlinePages.some(url => url.includes('home.html'));
-    const hasProducts = offlinePages.some(url => url.includes('products.html'));
-    const hasCart = offlinePages.some(url => url.includes('cart.html'));
-    const hasTransaction = offlinePages.some(url => url.includes('transaction.html'));
-    const hasAccount = offlinePages.some(url => url.includes('account.html'));
-    
-    // Get service worker version
-    const versionChannel = new MessageChannel();
-    const versionInfo = await new Promise((resolve) => {
-      versionChannel.port1.onmessage = (event) => {
-        resolve(event.data);
-      };
-      
-      navigator.serviceWorker.controller.postMessage(
-        { type: 'GET_CACHE_VERSION' },
-        [versionChannel.port2]
-      );
-      
-      setTimeout(() => resolve({ version: 'Unknown', cacheName: 'Unknown' }), 1000);
-    });
-    
-    // Check IndexedDB
-    let dbStatus = 'Checking...';
-    try {
-      const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open('CRMSDB', 3);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-        setTimeout(() => reject('Timeout'), 2000);
-      });
-      
-      const objectStoreNames = Array.from(db.objectStoreNames);
-      dbStatus = `✅ ${objectStoreNames.length} stores: ${objectStoreNames.join(', ')}`;
-      db.close();
-    } catch (error) {
-      dbStatus = `❌ Error: ${error}`;
-    }
-    
-    // Display comprehensive diagnostic info
-    Swal.fire({
-      title: 'Cache Diagnostic',
-      html: `
-        <div style="text-align: left; max-height: 400px; overflow-y: auto; font-size: 13px;">
-          <h4 style="color: #5BC2E7; margin-top: 0;">Service Worker</h4>
-          <p><strong>Version:</strong> ${versionInfo.version}</p>
-          <p><strong>Cache Name:</strong> ${versionInfo.cacheName}</p>
-          <p><strong>State:</strong> ${navigator.serviceWorker.controller ? '✅ Active' : '❌ Inactive'}</p>
-          
-          <h4 style="color: #5BC2E7; margin-top: 16px;">Cache Status</h4>
-          <p><strong>Total Cached Items:</strong> ${cacheInfo.cacheCount}</p>
-          
-          <h4 style="color: #5BC2E7; margin-top: 16px;">Offline Pages</h4>
-          <p>Login: ${hasLogin ? '✅' : '❌'}</p>
-          <p>Home: ${hasHome ? '✅' : '❌'}</p>
-          <p>Products: ${hasProducts ? '✅' : '❌'}</p>
-          <p>Cart: ${hasCart ? '✅' : '❌'}</p>
-          <p>Transaction: ${hasTransaction ? '✅' : '❌'}</p>
-          <p>Account: ${hasAccount ? '✅' : '❌'}</p>
-          <p style="font-size: 11px; color: #666; margin-top: 8px;">
-            Total offline pages: ${offlinePages.length}
-          </p>
-          
-          <h4 style="color: #5BC2E7; margin-top: 16px;">IndexedDB</h4>
-          <p style="font-size: 12px;">${dbStatus}</p>
-          
-          <h4 style="color: #5BC2E7; margin-top: 16px;">Network</h4>
-          <p>Status: ${navigator.onLine ? '✅ Online' : '❌ Offline'}</p>
-          
-          <h4 style="color: #5BC2E7; margin-top: 16px;">LocalStorage</h4>
-          <p>User ID: ${localStorage.getItem('current_user_id') || 'None'}</p>
-          <p>Offline User: ${localStorage.getItem('offlineUser') ? '✅ Set' : '❌ Not Set'}</p>
-          
-          <details style="margin-top: 16px;">
-            <summary style="cursor: pointer; color: #5BC2E7; font-weight: bold;">
-              View All Cached URLs (${cacheInfo.cacheCount})
-            </summary>
-            <ul style="font-size: 11px; padding-left: 20px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
-              ${cacheInfo.urls.map(url => {
-                const isOffline = url.includes('/offline/');
-                return `<li style="color: ${isOffline ? '#28a745' : '#666'};">${url}</li>`;
-              }).join('')}
-            </ul>
-          </details>
-        </div>
-      `,
-      width: '90%',
-      confirmButtonText: 'Close',
-      confirmButtonColor: '#5BC2E7',
-      showCancelButton: true,
-      cancelButtonText: 'Clear Cache & Reload',
-      cancelButtonColor: '#dc3545',
-      preConfirm: () => {
-        return true;
-      }
-    }).then((result) => {
-      if (result.dismiss === Swal.DismissReason.cancel) {
-        // Clear cache and reload
-        Swal.fire({
-          title: 'Clearing Cache',
-          text: 'This will clear all caches and reload the page...',
-          icon: 'warning',
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-            
-            // Clear all caches
-            caches.keys().then(names => {
-              return Promise.all(
-                names.map(name => caches.delete(name))
-              );
-            }).then(() => {
-              // Unregister service worker
-              return navigator.serviceWorker.getRegistrations();
-            }).then(registrations => {
-              return Promise.all(
-                registrations.map(reg => reg.unregister())
-              );
-            }).then(() => {
-              // Reload page
-              window.location.reload();
-            });
-          }
-        });
+
+    window.addEventListener('online', () => {
+      if (!isOnline) {
+        isOnline = true;
+        showOnlineAlert();
       }
     });
-    
-  } catch (error) {
-    console.error('Debug error:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Debug Error',
-      text: error.message,
-      confirmButtonColor: '#5BC2E7'
-    });
-  }
-}
-
-// Test offline mode
-async function testOfflineMode() {
-  Swal.fire({
-    title: 'Testing Offline Mode',
-    html: 'Checking if offline pages are accessible...',
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    }
-  });
-  
-  const offlinePages = [
-    'login.html',
-    'home.html',
-    'products.html',
-    'cart.html',
-    'transaction.html',
-    'account.html'
-  ];
-  
-  const basePath = window.location.pathname.includes('/crms/public') 
-    ? '/crms/public' 
-    : '';
-  
-  const results = [];
-  
-  for (const page of offlinePages) {
-    try {
-      const response = await caches.match(`${basePath}/offline/${page}`);
-      results.push({
-        page,
-        status: response ? '✅ Cached' : '❌ Not Cached'
-      });
-    } catch (error) {
-      results.push({
-        page,
-        status: `❌ Error: ${error.message}`
-      });
-    }
-  }
-  
-  Swal.fire({
-    title: 'Offline Mode Test',
-    html: `
-      <div style="text-align: left;">
-        ${results.map(r => `
-          <p><strong>${r.page}:</strong> ${r.status}</p>
-        `).join('')}
-      </div>
-    `,
-    icon: results.every(r => r.status.includes('✅')) ? 'success' : 'warning',
-    confirmButtonColor: '#5BC2E7'
-  });
-}
-
-// Initialize debug tools
-if (window.location.hostname === 'localhost' || window.location.hostname.includes('staging')) {
-  // Only show in development/staging
-  addDebugButton();
-  
-  // Add keyboard shortcut: Ctrl+Shift+D
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-      showCacheDebugInfo();
-    }
-  });
-  
-  console.log('🔍 Cache Debug Tools Active');
-  console.log('   - Click floating button OR press Ctrl+Shift+D');
-  console.log('   - Call showCacheDebugInfo() or testOfflineMode() in console');
-}
-
-// Make functions globally available for console debugging
-window.showCacheDebugInfo = showCacheDebugInfo;
-window.testOfflineMode = testOfflineMode;
   </script>
 </body>
 </html>
