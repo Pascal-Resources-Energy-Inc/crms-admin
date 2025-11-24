@@ -1046,5 +1046,300 @@
         .catch(err => console.error('❌ Service Worker failed:', err));
     }
   </script>
+  <script>
+    // ============================================
+// CACHE DIAGNOSTIC TOOL
+// Add this script to your home.html to debug caching
+// ============================================
+
+// Add a floating debug button (only in development)
+function addDebugButton() {
+  const debugBtn = document.createElement('button');
+  debugBtn.id = 'cacheDebugBtn';
+  debugBtn.innerHTML = '🔍 Cache';
+  debugBtn.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 10px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 12px;
+    font-weight: bold;
+  `;
+  
+  debugBtn.addEventListener('click', showCacheDebugInfo);
+  document.body.appendChild(debugBtn);
+}
+
+// Show detailed cache information
+async function showCacheDebugInfo() {
+  try {
+    // Check if service worker is registered
+    if (!navigator.serviceWorker.controller) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No Service Worker',
+        text: 'Service worker is not controlling this page. Try refreshing.',
+        confirmButtonColor: '#5BC2E7'
+      });
+      return;
+    }
+    
+    // Request cache info from service worker
+    const channel = new MessageChannel();
+    
+    const cacheInfo = await new Promise((resolve) => {
+      channel.port1.onmessage = (event) => {
+        resolve(event.data);
+      };
+      
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'CHECK_CACHE' },
+        [channel.port2]
+      );
+      
+      // Timeout after 3 seconds
+      setTimeout(() => resolve(null), 3000);
+    });
+    
+    if (!cacheInfo) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Response',
+        text: 'Service worker did not respond. Check console.',
+        confirmButtonColor: '#5BC2E7'
+      });
+      return;
+    }
+    
+    // Check what offline pages are cached
+    const offlinePages = cacheInfo.urls.filter(url => url.includes('/offline/'));
+    const hasLogin = offlinePages.some(url => url.includes('login.html'));
+    const hasHome = offlinePages.some(url => url.includes('home.html'));
+    const hasProducts = offlinePages.some(url => url.includes('products.html'));
+    const hasCart = offlinePages.some(url => url.includes('cart.html'));
+    const hasTransaction = offlinePages.some(url => url.includes('transaction.html'));
+    const hasAccount = offlinePages.some(url => url.includes('account.html'));
+    
+    // Get service worker version
+    const versionChannel = new MessageChannel();
+    const versionInfo = await new Promise((resolve) => {
+      versionChannel.port1.onmessage = (event) => {
+        resolve(event.data);
+      };
+      
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'GET_CACHE_VERSION' },
+        [versionChannel.port2]
+      );
+      
+      setTimeout(() => resolve({ version: 'Unknown', cacheName: 'Unknown' }), 1000);
+    });
+    
+    // Check IndexedDB
+    let dbStatus = 'Checking...';
+    try {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('CRMSDB', 3);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        setTimeout(() => reject('Timeout'), 2000);
+      });
+      
+      const objectStoreNames = Array.from(db.objectStoreNames);
+      dbStatus = `✅ ${objectStoreNames.length} stores: ${objectStoreNames.join(', ')}`;
+      db.close();
+    } catch (error) {
+      dbStatus = `❌ Error: ${error}`;
+    }
+    
+    // Display comprehensive diagnostic info
+    Swal.fire({
+      title: 'Cache Diagnostic',
+      html: `
+        <div style="text-align: left; max-height: 400px; overflow-y: auto; font-size: 13px;">
+          <h4 style="color: #5BC2E7; margin-top: 0;">Service Worker</h4>
+          <p><strong>Version:</strong> ${versionInfo.version}</p>
+          <p><strong>Cache Name:</strong> ${versionInfo.cacheName}</p>
+          <p><strong>State:</strong> ${navigator.serviceWorker.controller ? '✅ Active' : '❌ Inactive'}</p>
+          
+          <h4 style="color: #5BC2E7; margin-top: 16px;">Cache Status</h4>
+          <p><strong>Total Cached Items:</strong> ${cacheInfo.cacheCount}</p>
+          
+          <h4 style="color: #5BC2E7; margin-top: 16px;">Offline Pages</h4>
+          <p>Login: ${hasLogin ? '✅' : '❌'}</p>
+          <p>Home: ${hasHome ? '✅' : '❌'}</p>
+          <p>Products: ${hasProducts ? '✅' : '❌'}</p>
+          <p>Cart: ${hasCart ? '✅' : '❌'}</p>
+          <p>Transaction: ${hasTransaction ? '✅' : '❌'}</p>
+          <p>Account: ${hasAccount ? '✅' : '❌'}</p>
+          <p style="font-size: 11px; color: #666; margin-top: 8px;">
+            Total offline pages: ${offlinePages.length}
+          </p>
+          
+          <h4 style="color: #5BC2E7; margin-top: 16px;">IndexedDB</h4>
+          <p style="font-size: 12px;">${dbStatus}</p>
+          
+          <h4 style="color: #5BC2E7; margin-top: 16px;">Network</h4>
+          <p>Status: ${navigator.onLine ? '✅ Online' : '❌ Offline'}</p>
+          
+          <h4 style="color: #5BC2E7; margin-top: 16px;">LocalStorage</h4>
+          <p>User ID: ${localStorage.getItem('current_user_id') || 'None'}</p>
+          <p>Offline User: ${localStorage.getItem('offlineUser') ? '✅ Set' : '❌ Not Set'}</p>
+          
+          <details style="margin-top: 16px;">
+            <summary style="cursor: pointer; color: #5BC2E7; font-weight: bold;">
+              View All Cached URLs (${cacheInfo.cacheCount})
+            </summary>
+            <ul style="font-size: 11px; padding-left: 20px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
+              ${cacheInfo.urls.map(url => {
+                const isOffline = url.includes('/offline/');
+                return `<li style="color: ${isOffline ? '#28a745' : '#666'};">${url}</li>`;
+              }).join('')}
+            </ul>
+          </details>
+        </div>
+      `,
+      width: '90%',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#5BC2E7',
+      showCancelButton: true,
+      cancelButtonText: 'Clear Cache & Reload',
+      cancelButtonColor: '#dc3545',
+      preConfirm: () => {
+        return true;
+      }
+    }).then((result) => {
+      if (result.dismiss === Swal.DismissReason.cancel) {
+        // Clear cache and reload
+        Swal.fire({
+          title: 'Clearing Cache',
+          text: 'This will clear all caches and reload the page...',
+          icon: 'warning',
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+            
+            // Clear all caches
+            caches.keys().then(names => {
+              return Promise.all(
+                names.map(name => caches.delete(name))
+              );
+            }).then(() => {
+              // Unregister service worker
+              return navigator.serviceWorker.getRegistrations();
+            }).then(registrations => {
+              return Promise.all(
+                registrations.map(reg => reg.unregister())
+              );
+            }).then(() => {
+              // Reload page
+              window.location.reload();
+            });
+          }
+        });
+      }
+    });
+    
+  } catch (error) {
+    console.error('Debug error:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Debug Error',
+      text: error.message,
+      confirmButtonColor: '#5BC2E7'
+    });
+  }
+}
+
+// Test offline mode
+async function testOfflineMode() {
+  Swal.fire({
+    title: 'Testing Offline Mode',
+    html: 'Checking if offline pages are accessible...',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+  
+  const offlinePages = [
+    'login.html',
+    'home.html',
+    'products.html',
+    'cart.html',
+    'transaction.html',
+    'account.html'
+  ];
+  
+  const basePath = window.location.pathname.includes('/crms/public') 
+    ? '/crms/public' 
+    : '';
+  
+  const results = [];
+  
+  for (const page of offlinePages) {
+    try {
+      const response = await caches.match(`${basePath}/offline/${page}`);
+      results.push({
+        page,
+        status: response ? '✅ Cached' : '❌ Not Cached'
+      });
+    } catch (error) {
+      results.push({
+        page,
+        status: `❌ Error: ${error.message}`
+      });
+    }
+  }
+  
+  Swal.fire({
+    title: 'Offline Mode Test',
+    html: `
+      <div style="text-align: left;">
+        ${results.map(r => `
+          <p><strong>${r.page}:</strong> ${r.status}</p>
+        `).join('')}
+      </div>
+    `,
+    icon: results.every(r => r.status.includes('✅')) ? 'success' : 'warning',
+    confirmButtonColor: '#5BC2E7'
+  });
+}
+
+// Initialize debug tools
+if (window.location.hostname === 'localhost' || window.location.hostname.includes('staging')) {
+  // Only show in development/staging
+  addDebugButton();
+  
+  // Add keyboard shortcut: Ctrl+Shift+D
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+      showCacheDebugInfo();
+    }
+  });
+  
+  console.log('🔍 Cache Debug Tools Active');
+  console.log('   - Click floating button OR press Ctrl+Shift+D');
+  console.log('   - Call showCacheDebugInfo() or testOfflineMode() in console');
+}
+
+// Make functions globally available for console debugging
+window.showCacheDebugInfo = showCacheDebugInfo;
+window.testOfflineMode = testOfflineMode;
+  </script>
 </body>
 </html>
