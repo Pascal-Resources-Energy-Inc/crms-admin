@@ -512,25 +512,25 @@
     })();
 
     // ============================================
-    // INDEXEDDB FUNCTIONS
+    // INDEXEDDB FUNCTIONS - COPIED FROM TRANSACTION.HTML
     // ============================================
     let db;
     const DB_NAME = 'GazLiteDB';
     const DB_VERSION = 1;
     const STORE_NAME = 'transactions';
 
-    function initGazLiteDB() {
+    function initDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => {
-          console.error('GazLiteDB failed to open');
+          console.error('Database failed to open');
           reject(request.error);
         };
 
         request.onsuccess = () => {
           db = request.result;
-          console.log('GazLiteDB opened successfully');
+          console.log('Database opened successfully');
           resolve(db);
         };
 
@@ -549,8 +549,24 @@
             objectStore.createIndex('payment_method', 'payment_method', { unique: false });
             objectStore.createIndex('status', 'status', { unique: false });
             
-            console.log('Transactions object store created');
+            console.log('Object store created');
           }
+        };
+      });
+    }
+
+    function getAllTransactions() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_NAME], 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
+
+        request.onerror = () => {
+          reject(request.error);
         };
       });
     }
@@ -563,30 +579,120 @@
       });
     }
 
-    async function getAllTransactions() {
+    let allTransactions = [];
+
+    async function loadTransactions() {
       try {
-        if (!db) {
-          console.error('Database not initialized');
-          return [];
-        }
+        // Try to load from IndexedDB first
+        const dbTransactions = await getAllTransactions();
         
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction([STORE_NAME], 'readonly');
-          const store = tx.objectStore(STORE_NAME);
-          const request = store.getAll();
+        if (dbTransactions && dbTransactions.length > 0) {
+          allTransactions = dbTransactions.map(t => ({
+            id: t.id,
+            order_id: t.order_id,
+            customer_name: t.customer_name,
+            customer_serial: t.customer_serial || '',
+            customer_number: t.customer_number || '',
+            payment_method: t.payment_method,
+            total_amount: t.total_amount,
+            items: t.items || [],
+            status: t.status || 'Completed',
+            created_at: t.created_at,
+            transaction_type: 'Sales Invoice'
+          }));
+          
+          console.log('Loaded transactions from IndexedDB:', allTransactions.length);
+        } else {
+          // Fallback to localStorage
+          loadFromLocalStorage();
+        }
 
-          request.onsuccess = () => {
-            resolve(request.result);
-          };
+        // Sort by date (newest first) and take only 5 for home page
+        const latestTransactions = allTransactions
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
 
-          request.onerror = () => {
-            reject(request.error);
+        displayTransactions(latestTransactions);
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+        loadFromLocalStorage();
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        
+        // Transform orders into transaction format
+        allTransactions = completedOrders.map((order, index) => {
+          const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
+            sum + (item.price * item.quantity), 0);
+          
+          return {
+            id: order.order_id || `TXN-${Date.now()}-${index}`,
+            order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
+            customer_name: order.customer?.name || 'Unknown Customer',
+            customer_serial: order.customer?.serial || '',
+            customer_number: order.customer?.number || '',
+            payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
+            total_amount: totalAmount,
+            items: order.items || [],
+            status: order.status || 'Completed',
+            created_at: order.completed_at || order.created_at || new Date().toISOString(),
+            transaction_type: 'Sales Invoice'
           };
         });
+
+        // Sort and take only 5
+        const latestTransactions = allTransactions
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
+
+        displayTransactions(latestTransactions);
       } catch (error) {
-        console.error('Error getting transactions:', error);
-        return [];
+        console.error('Error loading transactions:', error);
+        showEmptyState('Error loading transactions');
       }
+    }
+
+    function displayTransactions(transactions) {
+      const div = document.getElementById('transactionList');
+      
+      if (transactions.length === 0) {
+        showEmptyState('No transactions yet');
+        return;
+      }
+      
+      div.innerHTML = transactions.map(tx => {
+        const name = tx.customer_name;
+        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        const date = new Date(tx.created_at);
+        const dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+        const timeStr = date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
+        
+        return `
+          <div class="transaction-card">
+            <div class="transaction-left">
+              <div class="user-avatar">${initials}</div>
+              <div class="transaction-details">
+                <div class="transaction-name">${name.toUpperCase()}</div>
+                <p class="transaction-info">${dateStr} ${timeStr}</p>
+              </div>
+            </div>
+            <div class="transaction-amount">₱${tx.total_amount.toFixed(2)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showEmptyState(message) {
+      const div = document.getElementById('transactionList');
+      div.innerHTML = `
+        <div class="empty-state">
+          <i class="bi bi-inbox"></i>
+          <p>${message}</p>
+        </div>
+      `;
     }
 
     async function getCurrentUser() {
@@ -669,126 +775,34 @@
         .reduce((sum, t) => sum + (parseFloat(t.points_dealer) || 0), 0);
     }
 
-    async function loadLatestTransactions() {
-      try {
-        const dbTransactions = await getAllTransactions();
-        
-        let allTransactions = [];
-        
-        if (dbTransactions && dbTransactions.length > 0) {
-          allTransactions = dbTransactions.map(t => ({
-            id: t.id,
-            order_id: t.order_id,
-            customer_name: t.customer_name,
-            customer_serial: t.customer_serial || '',
-            customer_number: t.customer_number || '',
-            payment_method: t.payment_method,
-            total_amount: t.total_amount,
-            items: t.items || [],
-            status: t.status || 'Completed',
-            created_at: t.created_at,
-            transaction_type: 'Sales Invoice'
-          }));
-          
-          console.log('Loaded transactions from GazLiteDB:', allTransactions.length);
-        } else {
-          // Fallback to localStorage
-          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-          
-          allTransactions = completedOrders.map((order, index) => {
-            const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
-              sum + (item.price * item.quantity), 0);
-            
-            return {
-              id: order.order_id || `TXN-${Date.now()}-${index}`,
-              order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
-              customer_name: order.customer?.name || 'Unknown Customer',
-              customer_serial: order.customer?.serial || '',
-              customer_number: order.customer?.number || '',
-              payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
-              total_amount: totalAmount,
-              items: order.items || [],
-              status: order.status || 'Completed',
-              created_at: order.completed_at || order.created_at || new Date().toISOString(),
-              transaction_type: 'Sales Invoice'
-            };
-          });
-        }
-
-        // Sort by date (newest first) and take only 5
-        const latestTransactions = allTransactions
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5);
-
-        displayTransactions(latestTransactions);
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-        showEmptyState('Error loading transactions');
-      }
-    }
-
-    function displayTransactions(transactions) {
-      const div = document.getElementById('transactionList');
-      
-      if (transactions.length === 0) {
-        showEmptyState('No transactions yet');
-        return;
-      }
-      
-      div.innerHTML = transactions.map(tx => {
-        const name = tx.customer_name;
-        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        const date = new Date(tx.created_at);
-        const dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-        const timeStr = date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
-        
-        return `
-          <div class="transaction-card">
-            <div class="transaction-left">
-              <div class="user-avatar">${initials}</div>
-              <div class="transaction-details">
-                <div class="transaction-name">${name.toUpperCase()}</div>
-                <p class="transaction-info">${dateStr} ${timeStr}</p>
-              </div>
-            </div>
-            <div class="transaction-amount">₱${tx.total_amount.toFixed(2)}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function showEmptyState(message) {
-      const div = document.getElementById('transactionList');
-      div.innerHTML = `
-        <div class="empty-state">
-          <i class="bi bi-inbox"></i>
-          <p>${message}</p>
-        </div>
-      `;
-    }
-
     function updateUserGreeting(user) {
       const firstName = user.name.split(' ')[0].toUpperCase();
       document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
     }
 
     // ============================================
-    // LOAD DATA
+    // LOAD DATA - EXACTLY LIKE TRANSACTION.HTML
     // ============================================
-    (async () => {
-      const user = await getCurrentUser();
-      if (!user) return;
-      
-      updateUserGreeting(user);
-      
-      if (user.role === 'Dealer') {
-        await fetchDealerInfo(user.id);
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Get user info first
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        updateUserGreeting(user);
+        
+        if (user.role === 'Dealer') {
+          await fetchDealerInfo(user.id);
+        }
+
+        // Initialize DB THEN load transactions
+        await initDB();
+        await loadTransactions();
+      } catch (error) {
+        console.error('Error initializing:', error);
+        loadFromLocalStorage();
       }
-      
-      await initGazLiteDB();
-      
-      await loadLatestTransactions();
-    })();
+    });
 
     // ============================================
     // NETWORK MONITORING
