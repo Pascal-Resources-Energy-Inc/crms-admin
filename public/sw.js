@@ -14,23 +14,12 @@ const BASE_PATH = self.location.pathname.includes('/crms/public') ? '/crms/publi
 
 // CRITICAL: Separate online and offline URLs
 const OFFLINE_URLS = [
-  // Offline pages ONLY
+  `${BASE_PATH}/pwa-launcher.html`,
+  
+  // Offline pages
   `${BASE_PATH}/offline/login.html`,
   `${BASE_PATH}/offline/home.html`,
-  `${BASE_PATH}/offline/products.html`,
-  `${BASE_PATH}/offline/cart.html`,
-  `${BASE_PATH}/offline/confirm_order.html`,
-  `${BASE_PATH}/offline/transaction.html`,
-  `${BASE_PATH}/offline/account.html`,
-  `${BASE_PATH}/offline/offline.js`,
   
-  // Images
-  `${BASE_PATH}/images/logo_sa_labas.png`,
-  `${BASE_PATH}/images/human.png`,
-  `${BASE_PATH}/images/context.png`,
-  `${BASE_PATH}/images/logo_nya.png`,
-  `${BASE_PATH}/images/aaa.png`,
-  `${BASE_PATH}/images/background.png`,
   
   // External CDN resources
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
