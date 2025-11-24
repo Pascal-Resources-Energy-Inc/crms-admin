@@ -1,23 +1,24 @@
-// =============================================================
-// BULLETPROOF Service Worker - Works Offline ALWAYS
-// This WILL work even after refresh while offline
-// =============================================================
-
 const CACHE_VERSION = 'v4';
 const CACHE_NAME = `gazlite-pwa-${CACHE_VERSION}`;
 
-// Determine BASE_PATH
+let offlineWarningShown = false;
+let consecutiveOfflineRequests = 0;
+
 const BASE_PATH = self.registration.scope.includes('/crms/public') 
   ? '/crms/public' 
   : '';
 
-console.log('[SW] 🚀 Service Worker Starting');
-console.log('[SW] 📦 Cache:', CACHE_NAME);
-console.log('[SW] 📂 Base Path:', BASE_PATH);
+console.log('[SW] Service Worker starting...');
+console.log('[SW] Scope:', self.registration.scope);
+console.log('[SW] BASE_PATH:', BASE_PATH);
+console.log('[SW] Cache name:', CACHE_NAME);
 
-// ALL offline files that MUST be cached
+// CRITICAL: Complete list of offline URLs to cache
 const OFFLINE_URLS = [
+  // PWA Launcher (entry point)
   `${BASE_PATH}/pwa-launcher.html`,
+  
+  // ALL Offline pages
   `${BASE_PATH}/offline/login.html`,
   `${BASE_PATH}/offline/home.html`,
   `${BASE_PATH}/offline/products.html`,
@@ -26,25 +27,36 @@ const OFFLINE_URLS = [
   `${BASE_PATH}/offline/transaction.html`,
   `${BASE_PATH}/offline/account.html`,
   `${BASE_PATH}/offline/offline.js`,
+  
+  // Images
   `${BASE_PATH}/images/logo_sa_labas.png`,
   `${BASE_PATH}/images/human.png`,
   `${BASE_PATH}/images/context.png`,
   `${BASE_PATH}/images/logo_nya.png`,
   `${BASE_PATH}/images/aaa.png`,
   `${BASE_PATH}/images/background.png`,
+  
+  // Icons
   `${BASE_PATH}/images/icons/icon-192x192.png`,
   `${BASE_PATH}/images/icons/icon-512x512.png`,
   `${BASE_PATH}/images/icons/logo_nya_192.png`,
   `${BASE_PATH}/images/icons/logo_nya_512.png`,
+  
+  // External CDN resources
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js",
   "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
   "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap",
+  "https://fonts.googleapis.com/icon?family=Material+Icons",
   "https://cdn.jsdelivr.net/npm/sweetalert2@11",
-  "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+  "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.all.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 ];
 
-// Routes that should NOT be cached (online only)
+// CRITICAL: Do NOT cache these online routes
 const ONLINE_ONLY_ROUTES = [
   '/home',
   '/login',
@@ -57,294 +69,339 @@ const ONLINE_ONLY_ROUTES = [
   '/client'
 ];
 
-// ==========================================
-// INSTALL - Cache everything immediately
-// ==========================================
-self.addEventListener('install', event => {
-  console.log('[SW] 📥 Installing...');
+// Install event
+self.addEventListener("install", event => {
+  console.log(`[SW] Installing service worker with CACHE: ${CACHE_NAME}`);
+  console.log(`[SW] BASE_PATH: ${BASE_PATH}`);
+  console.log(`[SW] Will cache ${OFFLINE_URLS.length} resources`);
   
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        console.log('[SW] ✅ Cache opened:', CACHE_NAME);
+        console.log("[SW] Cache opened successfully");
         
-        // Cache each URL one by one
-        let success = 0;
-        let failed = 0;
+        let successCount = 0;
+        let failCount = 0;
         
+        // Cache each URL individually with detailed logging
         for (const url of OFFLINE_URLS) {
           try {
+            console.log(`[SW] 🔄 Attempting to cache: ${url}`);
+            
             const response = await fetch(url, {
-              cache: 'reload',
+              cache: 'reload', // Force fresh fetch
               credentials: 'same-origin'
             });
             
-            if (response && response.ok) {
+            if (response.ok) {
               await cache.put(url, response);
-              success++;
-              console.log(`[SW] ✅ Cached (${success}/${OFFLINE_URLS.length}): ${url}`);
+              successCount++;
+              console.log(`[SW] ✅ Cached (${successCount}/${OFFLINE_URLS.length}): ${url}`);
             } else {
-              failed++;
-              console.warn(`[SW] ⚠️ Failed to cache (${response.status}): ${url}`);
+              failCount++;
+              console.warn(`[SW] ❌ Failed (${response.status}): ${url}`);
             }
           } catch (error) {
-            failed++;
+            failCount++;
             console.error(`[SW] ❌ Error caching ${url}:`, error.message);
           }
         }
         
-        console.log(`[SW] 📊 Cache Complete: ${success} success, ${failed} failed`);
+        console.log(`[SW] 📊 Cache Summary: ${successCount} successful, ${failCount} failed`);
         
-        // Verify critical offline pages are cached
+        // Verify what's actually in the cache
         const keys = await cache.keys();
-        const offlinePages = keys.filter(k => k.url.includes('/offline/'));
-        console.log(`[SW] 📄 Offline pages cached: ${offlinePages.length}`);
-        
-        if (offlinePages.length === 0) {
-          console.error('[SW] ⚠️ WARNING: No offline pages were cached!');
-        }
+        console.log(`[SW] 🔍 Total items in cache: ${keys.length}`);
+        console.log('[SW] 📝 Cached URLs:', keys.map(k => k.url));
         
       } catch (error) {
-        console.error('[SW] ❌ Install failed:', error);
+        console.error("[SW] ❌ Cache installation failed:", error);
       }
     })()
   );
   
-  // CRITICAL: Activate immediately
+  // Force activation immediately
   self.skipWaiting();
 });
 
-// ==========================================
-// ACTIVATE - Take control immediately
-// ==========================================
-self.addEventListener('activate', event => {
-  console.log('[SW] ⚡ Activating...');
+// Activate event - Clean up old caches
+self.addEventListener("activate", event => {
+  console.log("[SW] Activating service worker...");
   
   event.waitUntil(
     (async () => {
-      // Delete old caches
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName.startsWith('gazlite-pwa-') && cacheName !== CACHE_NAME) {
-            console.log('[SW] 🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-      
-      // CRITICAL: Take control of all pages immediately
-      await self.clients.claim();
-      console.log('[SW] ✅ Service Worker now controlling all pages');
-      
-      // Verify cache contents
-      const cache = await caches.open(CACHE_NAME);
-      const keys = await cache.keys();
-      const offlinePages = keys.filter(k => k.url.includes('/offline/'));
-      
-      console.log(`[SW] 📊 Cache contains ${keys.length} items`);
-      console.log(`[SW] 📄 Including ${offlinePages.length} offline pages`);
-      
-      offlinePages.forEach(page => {
-        console.log(`[SW] ✅ Offline page available: ${page.url}`);
-      });
+      try {
+        // Delete old caches
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            if (cacheName.startsWith("gazlite-pwa-") && cacheName !== CACHE_NAME) {
+              console.log("[SW] 🗑️ Deleting old cache:", cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+        
+        console.log("[SW] ✅ Service worker activated");
+        offlineWarningShown = false;
+        consecutiveOfflineRequests = 0;
+        
+        // Take control immediately
+        await self.clients.claim();
+        console.log("[SW] ✅ Claimed all clients");
+        
+        // Log current cache contents
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        console.log(`[SW] 📊 Active cache has ${keys.length} items`);
+        
+        // Check specifically for offline pages
+        const offlinePages = keys.filter(k => k.url.includes('/offline/'));
+        console.log(`[SW] 📄 Offline pages in cache: ${offlinePages.length}`, 
+          offlinePages.map(k => k.url));
+        
+      } catch (error) {
+        console.error("[SW] ❌ Activation error:", error);
+      }
     })()
   );
 });
 
-// ==========================================
-// FETCH - THE CRITICAL PART FOR OFFLINE
-// ==========================================
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-  
-  // Skip chrome extensions and non-http
-  if (!url.protocol.startsWith('http') || url.protocol === 'chrome-extension:') {
-    return;
-  }
-  
-  // Skip API calls - let them fail naturally
-  if (url.pathname.includes('/api/') || 
-      url.pathname.includes('/ajax/') ||
-      request.method !== 'GET') {
-    return;
-  }
-  
-  // CRITICAL: We MUST call respondWith for requests we want to handle
-  event.respondWith(handleFetch(request));
-});
+// Helper function to check if request is navigation
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' || 
+         (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'));
+}
 
-async function handleFetch(request) {
-  const url = new URL(request.url);
-  
-  // Skip non-http requests
-  if (!url.protocol.startsWith('http')) {
-    return fetch(request);
-  }
-  
-  // CRITICAL: Skip paths that shouldn't be handled by SW
-  const pathname = url.pathname;
-  const skipPaths = [
-    '/inside_css/',
-    '/assets/',
-    '/vendor/',
-    '/node_modules/',
-    '/api/',
-    '/_debugbar/'
-  ];
-  
-  if (skipPaths.some(path => pathname.includes(path))) {
-    console.log('[SW] ⏭️ Skipping (not our path):', pathname);
-    return fetch(request).catch(error => {
-      // Let it fail naturally for non-existent files
-      console.log('[SW] ⚠️ Resource not found (letting it fail):', pathname);
-      throw error;
-    });
-  }
-  
-  console.log('[SW] 🔍 Fetch:', pathname);
-  
-  // Check if this is a navigation (page load)
-  const isNavigation = request.mode === 'navigate' || 
-                       (request.method === 'GET' && 
-                        request.headers.get('accept')?.includes('text/html'));
-  
-  if (isNavigation) {
-    return handleNavigation(request, url);
-  } else {
-    return handleAsset(request, url);
+// Helper function to check if URL is online-only route
+function isOnlineOnlyRoute(url) {
+  const pathname = new URL(url).pathname;
+  return ONLINE_ONLY_ROUTES.some(route => pathname.includes(route));
+}
+
+// Helper to check if user is authenticated
+async function isUserAuthenticated() {
+  try {
+    const clients = await self.clients.matchAll({ type: 'window' });
+    
+    for (const client of clients) {
+      try {
+        const response = await new Promise((resolve) => {
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (event) => {
+            resolve(event.data);
+          };
+          client.postMessage({ type: 'CHECK_AUTH' }, [channel.port2]);
+          
+          setTimeout(() => resolve({ authenticated: false }), 1000);
+        });
+        
+        if (response.authenticated) {
+          return true;
+        }
+      } catch (error) {
+        console.log('[SW] Error checking auth:', error);
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('[SW] Error in isUserAuthenticated:', error);
+    return false;
   }
 }
 
+// Helper to send message to all clients
+async function notifyClients(message) {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => {
+    client.postMessage(message);
+  });
+}
+
+// CRITICAL: Smart fetch handler with online/offline detection
+self.addEventListener("fetch", event => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Only handle http/https requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Handle navigation requests (page loads)
+  if (isNavigationRequest(request)) {
+    event.respondWith(handleNavigation(request, url));
+    return;
+  }
+
+  // Handle non-navigation requests (assets, API calls)
+  event.respondWith(handleAssets(request));
+});
+
 async function handleNavigation(request, url) {
-  const pathname = url.pathname;
-  console.log('[SW] 🧭 Navigation to:', pathname);
+  console.log('[SW] 🔍 Navigation request:', url.pathname);
   
-  // Check if online-only route
-  const isOnlineRoute = ONLINE_ONLY_ROUTES.some(route => pathname.includes(route));
+  const isOnlineRoute = isOnlineOnlyRoute(url.href);
   
-  // Try network first (with timeout)
   try {
+    // Try network first with timeout
     const networkResponse = await Promise.race([
       fetch(request),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 2000)
+        setTimeout(() => reject(new Error('Network timeout')), 3000)
       )
     ]);
     
-    console.log('[SW] ✅ Network response received');
+    consecutiveOfflineRequests = 0;
+    offlineWarningShown = false;
     
-    // Don't cache online-only routes
-    if (!isOnlineRoute && networkResponse.ok) {
+    // If online route is accessed while online, DON'T cache it
+    if (isOnlineRoute) {
+      console.log('[SW] 🌐 Online route - NOT caching:', url.pathname);
+      return networkResponse;
+    }
+    
+    // Cache successful responses for offline routes only
+    if (networkResponse && networkResponse.status === 200) {
+      const responseToCache = networkResponse.clone();
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
-      console.log('[SW] 💾 Cached network response');
+      await cache.put(request, responseToCache);
+      console.log('[SW] ✅ Cached response for:', url.pathname);
     }
     
     return networkResponse;
     
   } catch (error) {
-    // Network failed - we're OFFLINE
-    console.log('[SW] ❌ Network failed:', error.message);
-    console.log('[SW] 📂 Serving from cache...');
+    console.log("[SW] ❌ Network failed:", error.message);
+    console.log("[SW] 📂 Attempting to serve from cache...");
+    consecutiveOfflineRequests++;
     
-    // Map the request to the appropriate offline page
-    let offlineFile = 'login.html';
+    // Notify client about offline status
+    if (!offlineWarningShown) {
+      offlineWarningShown = true;
+      notifyClients({ 
+        type: 'OFFLINE_STATUS',
+        message: 'You are currently offline'
+      });
+    }
     
-    if (pathname.includes('/home') || pathname === '/' || pathname === BASE_PATH + '/') {
-      // Check if user is logged in
-      const clients = await self.clients.matchAll({ type: 'window' });
-      let isAuth = false;
+    // Check if user is authenticated
+    const isAuth = await isUserAuthenticated();
+    console.log('[SW] 🔐 User authenticated:', isAuth);
+    
+    // CRITICAL: If online route was requested while offline, redirect to offline version
+    if (isOnlineRoute) {
+      console.log('[SW] 📍 Online route requested while offline - serving offline version');
       
-      for (const client of clients) {
-        try {
-          // Try to get auth status from the page
-          const response = await new Promise((resolve) => {
-            const channel = new MessageChannel();
-            channel.port1.onmessage = (e) => resolve(e.data);
-            client.postMessage({ type: 'CHECK_AUTH' }, [channel.port2]);
-            setTimeout(() => resolve({ authenticated: false }), 500);
-          });
-          
-          if (response.authenticated) {
-            isAuth = true;
-            break;
-          }
-        } catch (e) {
-          // Ignore
+      const pathname = url.pathname;
+      let offlineRoute = 'login.html';
+      
+      if (pathname.includes('/home')) {
+        offlineRoute = isAuth ? 'home.html' : 'login.html';
+      } else if (pathname.includes('/products')) {
+        offlineRoute = 'products.html';
+      } else if (pathname.includes('/cart')) {
+        offlineRoute = 'cart.html';
+      } else if (pathname.includes('/transaction')) {
+        offlineRoute = 'transaction.html';
+      } else if (pathname.includes('/account')) {
+        offlineRoute = 'account.html';
+      }
+      
+      const offlineUrl = `${BASE_PATH}/offline/${offlineRoute}`;
+      console.log(`[SW] 🔍 Looking for: ${offlineUrl}`);
+      
+      const offlinePage = await caches.match(offlineUrl);
+      if (offlinePage) {
+        console.log('[SW] ✅ Serving cached offline page:', offlineRoute);
+        return offlinePage;
+      } else {
+        console.log('[SW] ❌ Offline page not in cache:', offlineRoute);
+        
+        // List what IS in cache for debugging
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        console.log('[SW] 📝 Available cached URLs:', keys.map(k => k.url));
+      }
+    }
+    
+    // If navigating to main domain, serve appropriate offline page
+    if (url.pathname === '/' || url.pathname === BASE_PATH || 
+        url.pathname === `${BASE_PATH}/` || url.pathname === `${BASE_PATH}/login`) {
+      
+      console.log('[SW] 🏠 Main domain request while offline');
+      
+      // If authenticated, serve offline home
+      if (isAuth) {
+        const offlineHome = await caches.match(`${BASE_PATH}/offline/home.html`);
+        if (offlineHome) {
+          console.log("[SW] ✅ Serving cached offline home (authenticated)");
+          return offlineHome;
+        } else {
+          console.log("[SW] ❌ Offline home not in cache");
         }
       }
       
-      offlineFile = isAuth ? 'home.html' : 'login.html';
-    } else if (pathname.includes('/products')) {
-      offlineFile = 'products.html';
-    } else if (pathname.includes('/cart')) {
-      offlineFile = 'cart.html';
-    } else if (pathname.includes('/transaction')) {
-      offlineFile = 'transaction.html';
-    } else if (pathname.includes('/account')) {
-      offlineFile = 'account.html';
+      // Otherwise serve offline login
+      const offlineLogin = await caches.match(`${BASE_PATH}/offline/login.html`);
+      if (offlineLogin) {
+        console.log("[SW] ✅ Serving cached offline login");
+        return offlineLogin;
+      } else {
+        console.log("[SW] ❌ Offline login not in cache");
+      }
     }
     
-    const offlineUrl = `${BASE_PATH}/offline/${offlineFile}`;
-    console.log('[SW] 🔍 Looking for:', offlineUrl);
-    
-    // Try to get from cache
-    let cachedResponse = await caches.match(offlineUrl);
-    
+    // Try to serve cached version of requested page
+    const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      console.log('[SW] ✅ Serving cached offline page:', offlineFile);
+      console.log("[SW] ✅ Serving cached page:", request.url);
       return cachedResponse;
+    } else {
+      console.log("[SW] ❌ Page not in cache:", request.url);
     }
     
-    // If not found, try the requested URL directly
-    cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      console.log('[SW] ✅ Serving cached version of requested page');
-      return cachedResponse;
+    // Serve default offline page
+    const offlinePage = await caches.match(`${BASE_PATH}/offline/login.html`);
+    if (offlinePage) {
+      console.log("[SW] ✅ Serving default offline login page");
+      return offlinePage;
     }
     
-    // Last resort: try login page
-    const loginUrl = `${BASE_PATH}/offline/login.html`;
-    cachedResponse = await caches.match(loginUrl);
+    console.log("[SW] ❌ No cached pages found, showing fallback");
     
-    if (cachedResponse) {
-      console.log('[SW] ✅ Serving default offline login page');
-      return cachedResponse;
-    }
-    
-    // ABSOLUTE LAST RESORT: Error page
-    console.log('[SW] ❌ No cached pages found at all!');
+    // Fallback HTML (only shown if nothing is cached)
     return new Response(`
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
-        <title>Offline - GazLite</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Offline - GazLite</title>
         <style>
-          body {
+          body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #5DADE2 0%, #3498DB 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #5DADE2, #3498DB);
-            padding: 20px;
           }
           .container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            text-align: center;
             max-width: 400px;
+            margin: 20px;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            text-align: center;
           }
           .icon { font-size: 64px; margin-bottom: 20px; }
-          h1 { color: #5DADE2; margin: 0 0 16px; }
+          h1 { color: #5DADE2; margin: 0 0 16px 0; font-size: 24px; }
           p { color: #666; line-height: 1.6; margin-bottom: 24px; }
           button {
             background: #5DADE2;
@@ -352,9 +409,15 @@ async function handleNavigation(request, url) {
             border: none;
             padding: 14px 32px;
             border-radius: 28px;
-            font-size: 16px;
             cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
             width: 100%;
+          }
+          button:hover { 
+            background: #3498DB;
+            transform: translateY(-2px);
           }
         </style>
       </head>
@@ -362,7 +425,8 @@ async function handleNavigation(request, url) {
         <div class="container">
           <div class="icon">📵</div>
           <h1>You're Offline</h1>
-          <p>Offline pages are not cached yet. Please connect to internet and visit the app once to enable offline mode.</p>
+          <p>GazLite offline pages are not cached yet.</p>
+          <p>Please connect to the internet and visit the app first to enable offline mode.</p>
           <button onclick="window.location.reload()">Try Again</button>
         </div>
       </body>
@@ -371,69 +435,79 @@ async function handleNavigation(request, url) {
       headers: { 
         'Content-Type': 'text/html',
         'Cache-Control': 'no-cache'
-      },
-      status: 503
+      }
     });
   }
 }
 
-async function handleAsset(request, url) {
-  // For assets (CSS, JS, images, etc.)
-  // Try cache first, then network
-  
+async function handleAssets(request) {
+  // For non-navigation requests - Cache First strategy
   try {
-    // Check cache first
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
-      console.log('[SW] 💾 Asset from cache:', url.pathname);
+      console.log("[SW] 📦 Serving asset from cache:", request.url);
       
-      // Update in background if online
-      fetch(request).then(response => {
-        if (response && response.ok) {
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(request, response);
-          });
-        }
-      }).catch(() => {});
+      // Return cached version but update in background if online
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(request, response);
+            });
+          }
+        })
+        .catch(() => {/* Ignore fetch errors for cached resources */});
       
       return cachedResponse;
     }
     
     // Not in cache, try network
-    console.log('[SW] 🌐 Fetching asset from network:', url.pathname);
-    const networkResponse = await fetch(request);
+    const networkResponse = await fetch(request, { 
+      signal: AbortSignal.timeout(8000) 
+    });
     
     // Cache successful responses
-    if (networkResponse && networkResponse.ok && request.method === 'GET') {
+    if (networkResponse && networkResponse.status === 200 && request.method === 'GET') {
+      const responseToCache = networkResponse.clone();
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
-      console.log('[SW] 💾 Cached new asset:', url.pathname);
+      await cache.put(request, responseToCache);
+      console.log('[SW] ✅ Cached asset:', request.url);
     }
     
     return networkResponse;
     
   } catch (error) {
-    console.log('[SW] ⚠️ Asset unavailable:', url.pathname);
-    
-    // Return a generic error response
-    return new Response('Offline - Resource unavailable', {
-      status: 503,
+    console.log("[SW] ⚠️ Asset not available:", request.url);
+    return new Response('Offline - Resource not available', { 
+      status: 503, 
       statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/plain' }
+      headers: new Headers({
+        'Content-Type': 'text/plain'
+      })
     });
   }
 }
 
-// Message handling
+// Listen for messages from the client
 self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log("[SW] ⏩ Skipping waiting...");
     self.skipWaiting();
   }
   
-  if (event.data?.type === 'CHECK_CACHE') {
+  if (event.data && event.data.type === 'RESET_OFFLINE_STATE') {
+    console.log("[SW] 🔄 Resetting offline state");
+    offlineWarningShown = false;
+    consecutiveOfflineRequests = 0;
+  }
+  
+  if (event.data && event.data.type === 'CHECK_CACHE') {
     caches.open(CACHE_NAME).then(cache => {
       cache.keys().then(keys => {
+        console.log("[SW] 📋 Cached URLs:", keys.map(k => k.url));
+        
+        // Send response back to client
         event.ports[0]?.postMessage({
           cacheCount: keys.length,
           urls: keys.map(k => k.url)
@@ -442,7 +516,22 @@ self.addEventListener('message', event => {
     });
   }
   
-  if (event.data?.type === 'GET_CACHE_VERSION') {
+  if (event.data && event.data.type === 'CLEAR_ONLINE_CACHE') {
+    console.log("[SW] 🧹 Clearing online route cache...");
+    caches.open(CACHE_NAME).then(cache => {
+      cache.keys().then(keys => {
+        keys.forEach(key => {
+          const url = new URL(key.url);
+          if (isOnlineOnlyRoute(url.href)) {
+            cache.delete(key);
+            console.log("[SW] 🗑️ Deleted cached online route:", url.pathname);
+          }
+        });
+      });
+    });
+  }
+  
+  if (event.data && event.data.type === 'GET_CACHE_VERSION') {
     event.ports[0]?.postMessage({
       version: CACHE_VERSION,
       cacheName: CACHE_NAME
@@ -450,4 +539,7 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('[SW] ✅ Service Worker Script Loaded');
+console.log('[SW] ✅ Service Worker loaded successfully');
+console.log('[SW] 📦 Cache name:', CACHE_NAME);
+console.log('[SW] 📂 Base path:', BASE_PATH);
+console.log('[SW] 📝 Total URLs to cache:', OFFLINE_URLS.length);
