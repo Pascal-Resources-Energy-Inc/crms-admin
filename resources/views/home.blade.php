@@ -329,7 +329,7 @@
             <!-- Sync Button and Status -->
             <div class="row mb-3">
                 <div class="col-12">
-                    <button class="sync-btn" id="syncButton" onclick="syncOfflineTransactions()">
+                    <button class="sync-btn d-none" id="syncButton" onclick="syncOfflineTransactions()">
                         <i class="bi bi-cloud-arrow-up"></i>
                         <span>Sync Offline Transactions</span>
                     </button>
@@ -513,6 +513,9 @@
     @endif
 </div>
 
+<!-- Add this in your head section or before closing body tag -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 // Original transaction display code
 document.addEventListener("DOMContentLoaded", function () {
@@ -630,14 +633,19 @@ async function checkPendingTransactions() {
     try {
         const transactions = await getOfflineTransactions();
         const statusDiv = document.getElementById('syncStatus');
+        const syncButton = document.getElementById('syncButton');
         const pendingCountEl = document.getElementById('pendingCount');
         
         console.log('Pending transactions count:', transactions.length);
         
         if (transactions && transactions.length > 0) {
+            // Show both button and status when there are pending transactions
+            syncButton.classList.remove('d-none');
             statusDiv.classList.remove('d-none');
             pendingCountEl.textContent = transactions.length;
         } else {
+            // Hide both button and status when no pending transactions
+            syncButton.classList.add('d-none');
             statusDiv.classList.add('d-none');
         }
     } catch (error) {
@@ -653,13 +661,20 @@ async function syncOfflineTransactions() {
     const failedCountEl = document.getElementById('failedCount');
     const lastSyncEl = document.getElementById('lastSync');
     
-    // Get offline transactions from GazLiteDB
     const transactions = await getOfflineTransactions();
     
     console.log('Transactions to sync:', transactions);
     
     if (!transactions || transactions.length === 0) {
-        alert('No offline transactions to sync');
+        Swal.fire({
+            icon: 'info',
+            title: 'No Transactions',
+            text: 'No offline transactions to sync',
+            confirmButtonColor: '#5BC2E7'
+        });
+        // Hide button and status when no transactions
+        button.classList.add('d-none');
+        statusDiv.classList.add('d-none');
         return;
     }
     
@@ -678,9 +693,9 @@ async function syncOfflineTransactions() {
     for (const transaction of transactions) {
         try {
             console.log('Syncing transaction:', transaction);
-                console.log(transaction);
-            const transactionData = {
+            console.log(transaction);
             
+            const transactionData = {
                 item_id: transaction.items[0].id,
                 qty: parseInt(transaction.quantity) || 1,
                 customer_id: Array.isArray(transaction.customer_id) ? transaction.customer_id[0] : (transaction.customer_id || null),
@@ -702,7 +717,7 @@ async function syncOfflineTransactions() {
             // Get CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             
-            // Send to API endpoint - Use absolute URL to ensure it's correct
+            // Send to API endpoint
             const response = await fetch('/api/transactions/store', {
                 method: 'POST',
                 headers: {
@@ -758,7 +773,7 @@ async function syncOfflineTransactions() {
         failedCountEl.textContent = failedCount;
         pendingCountEl.textContent = transactions.length - syncedCount - failedCount;
         
-        // Add a small delay between requests to avoid overwhelming the server
+        // Add a small delay between requests
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     
@@ -770,30 +785,42 @@ async function syncOfflineTransactions() {
     const now = new Date();
     lastSyncEl.textContent = now.toLocaleString();
     
-    // Show detailed result message
+    // Show detailed result message with SweetAlert2
     if (syncedCount > 0) {
-        let message = `Successfully synced ${syncedCount} transaction(s)`;
         if (failedCount > 0) {
-            message += `\n${failedCount} failed to sync.`;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Partial Success',
+                html: `Successfully synced <strong>${syncedCount}</strong> transaction(s)<br>${failedCount} failed to sync.`,
+                confirmButtonColor: '#5BC2E7'
+            });
             console.error('Failed transactions:', failedTransactions);
             
-            // Show detailed error for first failed transaction
             if (failedTransactions.length > 0) {
                 console.error('First failed transaction details:', failedTransactions[0]);
             }
-        }
-        alert(message);
-        
-        // Reload page to show new transactions if all synced successfully
-        if (failedCount === 0) {
-            window.location.reload();
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Sync Complete!',
+                text: `Successfully synced ${syncedCount} transaction(s)`,
+                confirmButtonColor: '#5BC2E7'
+            }).then(() => {
+                // Reload page to show new transactions if all synced successfully
+                window.location.reload();
+            });
         }
     } else {
-        alert('Failed to sync transactions. Please check your connection and try again.\nCheck console for details.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Sync Failed',
+            text: 'Failed to sync transactions. Please check your connection and try again.',
+            confirmButtonColor: '#5BC2E7'
+        });
         console.error('All transactions failed:', failedTransactions);
     }
     
-    // Check remaining transactions
+    // Check remaining transactions (will hide button if none left)
     await checkPendingTransactions();
 }
 
@@ -858,5 +885,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-
 @endsection

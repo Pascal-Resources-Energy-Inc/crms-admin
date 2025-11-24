@@ -543,6 +543,16 @@
     }
   </style>
 </head>
+<script>
+(function() {
+    const offlineUser = localStorage.getItem('offlineUser');
+    const currentUserId = localStorage.getItem('current_user_id');
+    
+    if (!offlineUser && !currentUserId) {
+        window.location.replace('login.html');
+    }
+})();
+</script>
 <body>
   <!-- Network Status Indicator -->
   <div class="network-status" id="networkStatus"></div>
@@ -671,7 +681,9 @@
 
   <!-- SweetAlert2 JS -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+  <script src="/offline/offline.js"></script>
+
+
   <script>
     // ============================================
     // SIMPLIFIED INDEXEDDB DATA FETCHING
@@ -901,25 +913,33 @@
       const actuallyOnline = await checkNetworkConnection();
       
       if (!actuallyOnline && isOnline) {
-        isOnline = false;
-        if (showAlert) {
-          showOfflineAlert();
-        } else {
+          isOnline = false;
+          if (showAlert) {
+              showOfflineAlert();
+          } else {
+              networkStatus.className = 'network-status offline';
+              networkStatus.textContent = '● Offline Mode';
+          }
+          
+          // Remove "Go Online" button if exists
+          const btn = document.getElementById('goOnlineBtn');
+          if (btn) btn.remove();
+          
+      } else if (actuallyOnline && !isOnline) {
+          isOnline = true;
+          if (showAlert) {
+              showOnlineAlert();
+          } else {
+              networkStatus.style.display = 'none';
+          }
+          
+          showGoOnlineButton();
+          
+      } else if (!actuallyOnline) {
           networkStatus.className = 'network-status offline';
           networkStatus.textContent = '● Offline Mode';
-        }
-      } else if (actuallyOnline && !isOnline) {
-        isOnline = true;
-        if (showAlert) {
-          showOnlineAlert();
-        } else {
-          networkStatus.style.display = 'none';
-        }
-      } else if (!actuallyOnline) {
-        networkStatus.className = 'network-status offline';
-        networkStatus.textContent = '● Offline Mode';
       }
-    }
+  }
 
     updateConnectionStatus(false);
 
@@ -959,26 +979,67 @@
     }
 
     function showOnlineAlert() {
-      networkStatus.className = 'network-status online';
-      networkStatus.textContent = '● Online';
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Back Online!',
-        text: 'Your connection has been restored.',
-        iconColor: '#2ecc71',
-        confirmButtonColor: '#5BC2E7',
-        confirmButtonText: 'Great!',
-        timer: 3000,
-        timerProgressBar: true
-      });
+        networkStatus.className = 'network-status online';
+        networkStatus.textContent = '● Online';
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Back Online!',
+            html: `
+                <p style="font-size: 16px; margin-bottom: 10px;">Your connection has been restored.</p>
+                <p style="font-size: 14px; color: #666;">Would you like to switch to online mode?</p>
+            `,
+            iconColor: '#2ecc71',
+            showCancelButton: true,
+            confirmButtonColor: '#5BC2E7',
+            cancelButtonColor: '#95a5a6',
+            confirmButtonText: '<i class="bi bi-wifi"></i> Go Online',
+            cancelButtonText: '<i class="bi bi-x-circle"></i> Stay Offline',
+            allowOutsideClick: false,
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // User clicked "Go Online" - redirect to online version
+                Swal.fire({
+                    title: 'Switching to Online Mode',
+                    html: 'Redirecting to online dashboard...',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                }).then(() => {
+                      const basePath = window.location.pathname.includes('/crms/public') 
+                          ? '/crms/public' 
+                          : '';
 
-      setTimeout(() => {
-        networkStatus.style.display = 'none';
-      }, 3000);
+                      const userToken = localStorage.getItem('token');
+
+                      if (userToken) {
+                          window.location.href = `${basePath}/home`;
+                      } else {
+                          window.location.href = `${basePath}/login`;
+                      }
+                  });
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Staying Offline',
+                    text: 'You can continue using offline mode. Switch to online anytime.',
+                    confirmButtonColor: '#5BC2E7',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+
+                setTimeout(() => {
+                    networkStatus.style.display = 'none';
+                }, 3000);
+            }
+        });
     }
 
-    // Service Worker Registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
         .then(reg => console.log('✅ Service Worker registered!', reg))

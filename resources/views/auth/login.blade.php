@@ -12,6 +12,9 @@ $isDirect = request('direct') === 'true';
 $showRoleSelection = $isDirect && !$showLoginDirectly;
 ?>
 
+<!-- Add SweetAlert2 CDN in head or here -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="landing-page" id="landingPage" style="display: {{ $showLoginDirectly || $showRoleSelection ? 'none' : 'flex' }};">
     <div class="landing-content">
         <div class="landing-wrapper">
@@ -115,7 +118,7 @@ $showRoleSelection = $isDirect && !$showLoginDirectly;
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('login') }}" aria-label="{{ __('Login') }}">
+            <form id="loginForm" aria-label="{{ __('Login') }}">
                 @csrf
                 
                 <!-- Hidden field to send selected role -->
@@ -126,16 +129,13 @@ $showRoleSelection = $isDirect && !$showLoginDirectly;
                     <input 
                         id="email" 
                         type="text" 
-                        class="form-input{{ $errors->has('email') ? ' error' : '' }}" 
+                        class="form-input" 
                         name="email" 
                         value="{{ old('email') }}" 
                         placeholder="Email or Phone Number"
                         required 
                         autofocus
                     >
-                    @if($errors->has('email'))
-                        <div class="error-text">{{ $errors->first('email') }}</div>
-                    @endif
                 </div>
 
                 <div class="input-group">
@@ -143,21 +143,12 @@ $showRoleSelection = $isDirect && !$showLoginDirectly;
                     <input 
                         id="password" 
                         type="password" 
-                        class="form-input{{ $errors->has('password') ? ' error' : '' }}" 
+                        class="form-input" 
                         placeholder="At least 8 characters" 
                         name="password" 
                         required
                     >
-                    @if($errors->has('password'))
-                        <div class="error-text">{{ $errors->first('password') }}</div>
-                    @endif
                 </div>
-
-                @if($errors->any() && !$errors->has('email') && !$errors->has('password'))
-                    <div class="alert-error">
-                        {{ $errors->first() }}
-                    </div>
-                @endif
 
                 <button class="signin-button" type="submit" id="signinButton">
                     Sign in
@@ -377,7 +368,6 @@ body {
     transform: translateY(-2px);
 }
 
-/* New styles for role selection indication */
 .role-button.selected {
     opacity: 0.8;
     box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #5DADE2;
@@ -396,7 +386,6 @@ body {
     stroke: white;
 }
 
-/* Continue button styles */
 .continue-section {
     margin-bottom: 20px;
     opacity: 0;
@@ -515,7 +504,6 @@ body {
     max-width: 400px;
 }
 
-/* Role indicator in login form */
 .role-indicator {
     background-color: #F0F8FF;
     border-left: 4px solid #5DADE2;
@@ -575,56 +563,6 @@ body {
     background-color: #EEEEEE;
 }
 
-.form-input.error {
-    background-color: #FFE5E5;
-    border: 1px solid #FF6B6B;
-}
-
-.error-text {
-    color: #FF6B6B;
-    font-size: 14px;
-    margin-top: 6px;
-}
-
-.otp-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 32px;
-}
-
-.otp-text {
-    font-size: 16px;
-    color: #666666;
-}
-
-.email-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 20px;
-    background-color: #5DADE2;
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.email-btn:hover {
-    background-color: #3498DB;
-}
-
-.email-icon {
-    width: 16px;
-    height: 16px;
-    stroke: white;
-    fill: none;
-}
-
 .signin-button {
     width: 100%;
     height: 56px;
@@ -657,16 +595,6 @@ body {
 
 .forgot-link:hover {
     text-decoration: underline;
-}
-
-.alert-error {
-    background-color: #FFE5E5;
-    color: #FF6B6B;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border-left: 4px solid #FF6B6B;
-    margin-bottom: 20px;
-    font-size: 14px;
 }
 
 @media (max-width: 480px) {
@@ -738,12 +666,132 @@ body {
 let currentRole = '{{ old("selected_role") ?? "" }}';
 
 document.addEventListener('DOMContentLoaded', function() {
-    const hasErrors = document.querySelector('.error-text') || document.querySelector('.alert-error');
     const selectedRoleInput = document.getElementById('selectedRoleInput');
     
-    if (hasErrors && selectedRoleInput && selectedRoleInput.value) {
+    if (selectedRoleInput && selectedRoleInput.value) {
         currentRole = selectedRoleInput.value;
         updateLoginFormRole();
+    }
+
+    // Handle Laravel validation errors with SweetAlert
+    @if($errors->any())
+        let errorMessage = '';
+        @if($errors->has('email') || $errors->has('password'))
+            errorMessage = 'Invalid credentials. Please check your email/phone and password.';
+        @else
+            errorMessage = '{{ $errors->first() }}';
+        @endif
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: errorMessage,
+            confirmButtonColor: '#5DADE2'
+        });
+    @endif
+
+    // Handle session error messages
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: '{{ session('error') }}',
+            confirmButtonColor: '#5DADE2'
+        });
+    @endif
+
+    // Handle login form submission with AJAX to bypass service worker
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitButton = document.getElementById('signinButton');
+            const originalText = submitButton.innerHTML;
+            
+            // Disable button and show loading
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('{{ route("login") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    redirect: 'manual' // Prevent automatic redirects
+                });
+                
+                // Check if response is a redirect (successful login)
+                if (response.type === 'opaqueredirect' || response.redirected) {
+                    // Successful login - redirect manually
+                    window.location.href = response.url || '/dashboard';
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                
+                // Handle HTML response (validation errors)
+                if (contentType && contentType.includes('text/html')) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: 'Invalid credentials. Please check your email/phone and password.',
+                        confirmButtonColor: '#5DADE2'
+                    });
+                    
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                    return;
+                }
+                
+                // Try to parse JSON response
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Success
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Login Successful!',
+                        text: 'Welcome back!',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        confirmButtonColor: '#5DADE2'
+                    }).then(() => {
+                        window.location.href = result.redirect || '/dashboard';
+                    });
+                } else {
+                    // Show error
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: result.message || 'Invalid credentials. Please check your email/phone and password.',
+                        confirmButtonColor: '#5DADE2'
+                    });
+                    
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Connection Error',
+                    text: 'Unable to connect to the server. Please check your internet connection.',
+                    confirmButtonColor: '#5DADE2'
+                });
+                
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        });
     }
 });
 
@@ -785,20 +833,6 @@ function clearRoleSelection() {
 }
 
 function clearAllErrors() {
-    document.querySelectorAll('.error-text').forEach(error => {
-        error.style.display = 'none';
-    });
-    
-    document.querySelectorAll('.alert-error').forEach(alert => {
-        alert.style.display = 'none';
-    });
-    
-    document.querySelectorAll('.form-input.error').forEach(input => {
-        input.classList.remove('error');
-        input.style.backgroundColor = '#F5F5F5';
-        input.style.border = 'none';
-    });
-    
     document.querySelectorAll('.form-input').forEach(input => {
         if (input.name !== 'selected_role') {
             input.value = '';

@@ -11,26 +11,24 @@ use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 class TransactionController extends Controller
 {
-    //
-
     public function index(Request $request)
     {
         $customers = Client::whereHas('serial')->get();
         $items = Item::get();
         $dealers = Dealer::get();
-         $transactions = [];
+         $place_order = [];
         //  dd(auth()->user());
         if(auth()->user()->role == "Admin")
         {
-            $transactions = TransactionDetail::get();
+            $place_order = TransactionDetail::get();
         }
         elseif(auth()->user()->role == "Dealer")
         {
-            $transactions = TransactionDetail::where('dealer_id',auth()->user()->id)->get();
+            $place_order = TransactionDetail::where('dealer_id',auth()->user()->id)->get();
         }
         return view('place_order',
             array(
-                'transactions' => $transactions,
+                'place_order' => $place_order,
                 'items' => $items,
                 'customers' => $customers,
                 'dealers' => $dealers,
@@ -57,6 +55,7 @@ class TransactionController extends Controller
         ]);
 
         $item = Item::findOrFail($request->item_id);
+        $client = Client::findOrFail($request->customer_id);
 
         $transaction = new TransactionDetail;
         $transaction->item = $item->item;
@@ -66,6 +65,7 @@ class TransactionController extends Controller
         $transaction->qty = $request->qty;
         $transaction->price = $item->price;
         $transaction->client_id = $request->customer_id;
+        $transaction->client_address = $client->address ?? '';
         $transaction->date = date('Y-m-d');
         $transaction->dealer_id = auth()->user()->id;
         $transaction->created_by = auth()->user()->id;
@@ -124,25 +124,9 @@ class TransactionController extends Controller
     \Log::info('API Store Request:', $request->all());
     
     try {
-        // // Validate request
-        // $validated = $request->validate([
-        //     'item_id' => 'required|exists:items,id',
-        //     'qty' => 'required|integer|min:1',
-        //     'customer_id' => 'required|exists:clients,id',
-        //     'payment_method' => 'nullable|string|in:cash,gcash,maya',
-        //     'dealer_id' => 'nullable|exists:users,id' // Changed to users table
-        // ], [
-        //     'item_id.required' => 'Item ID is required',
-        //     'item_id.exists' => 'Item does not exist in database',
-        //     'qty.required' => 'Quantity is required',
-        //     'qty.integer' => 'Quantity must be a number',
-        //     'qty.min' => 'Quantity must be at least 1',
-        //     'customer_id.required' => 'Customer ID is required',
-        //     'customer_id.exists' => 'Customer does not exist in database'
-        // ]);
-
         // Get item details
         $item = Item::findOrFail($request->item_id);
+        $client = Client::findOrFail($request->customer_id);
 
         // Determine dealer_id (priority: request > auth > null)
         $dealerId = $request->dealer_id ?? (auth()->check() ? auth()->id() : null);
@@ -163,6 +147,7 @@ class TransactionController extends Controller
         $transaction->qty = $request->qty;
         $transaction->price = $item->price;
         $transaction->client_id = $request->customer_id;
+        $transaction->client_address = $client->address ?? '';
         $transaction->date = date('Y-m-d');
         $transaction->dealer_id = $dealerId;
         $transaction->created_by = $dealerId;
@@ -182,6 +167,7 @@ class TransactionController extends Controller
                 'total' => $transaction->price * $transaction->qty,
                 'points_dealer' => $transaction->points_dealer,
                 'points_client' => $transaction->points_client,
+                'client_address' => $transaction->client_address,
                 'created_at' => $transaction->created_at
             ]
         ], 201);
@@ -208,92 +194,11 @@ class TransactionController extends Controller
     }
 }
 
-    // // OPTIONAL: Bulk store for syncing multiple transactions at once
-    // public function bulkStoreApi(Request $request)
-    // {
-    //     try {
-    //         $validated = $request->validate([
-    //             'transactions' => 'required|array|min:1',
-    //             'transactions.*.item_id' => 'required|exists:items,id',
-    //             'transactions.*.qty' => 'required|integer|min:1',
-    //             'transactions.*.customer_id' => 'required|exists:clients,id',
-    //             'transactions.*.payment_method' => 'nullable|string|in:cash,gcash,maya',
-    //             'dealer_id' => 'nullable|exists:dealers,id'
-    //         ]);
-
-    //         $successCount = 0;
-    //         $failedCount = 0;
-    //         $errors = [];
-    //         $savedTransactions = [];
-
-    //         foreach ($request->transactions as $index => $transactionData) {
-    //             try {
-    //                 $item = Item::findOrFail($transactionData['item_id']);
-
-    //                 $transaction = new TransactionDetail;
-    //                 $transaction->item = $item->item;
-    //                 $transaction->points_dealer = $item->dealer_points * $transactionData['qty'];
-    //                 $transaction->points_client = $item->customer_points * $transactionData['qty'];
-    //                 $transaction->item_description = $item->item_description;
-    //                 $transaction->qty = $transactionData['qty'];
-    //                 $transaction->price = $item->price;
-    //                 $transaction->client_id = $transactionData['customer_id'];
-    //                 $transaction->date = date('Y-m-d');
-    //                 $transaction->dealer_id = $request->dealer_id ?? auth()->id() ?? null;
-    //                 $transaction->created_by = $request->dealer_id ?? auth()->id() ?? null;
-    //                 $transaction->payment_method = $transactionData['payment_method'] ?? 'cash';
-    //                 $transaction->save();
-
-    //                 $savedTransactions[] = [
-    //                     'id' => $transaction->id,
-    //                     'item' => $transaction->item,
-    //                     'qty' => $transaction->qty
-    //                 ];
-    //                 $successCount++;
-
-    //             } catch (\Exception $e) {
-    //                 $failedCount++;
-    //                 $errors[] = [
-    //                     'index' => $index,
-    //                     'error' => $e->getMessage()
-    //                 ];
-    //             }
-    //         }
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => "Successfully saved {$successCount} transaction(s)" . 
-    //                         ($failedCount > 0 ? ", {$failedCount} failed" : ""),
-    //             'data' => [
-    //                 'success_count' => $successCount,
-    //                 'failed_count' => $failedCount,
-    //                 'saved_transactions' => $savedTransactions,
-    //                 'errors' => $errors
-    //             ]
-    //         ], $failedCount > 0 ? 207 : 201); // 207 Multi-Status if some failed
-
-    //     } catch (\Illuminate\Validation\ValidationException $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Validation failed',
-    //             'errors' => $e->errors()
-    //         ], 422);
-
-    //     } catch (\Exception $e) {
-    //         \Log::error('Bulk API Transaction Store Error: ' . $e->getMessage());
-            
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Failed to save transactions: ' . $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-    
     public function storeAdmin(Request $request)
     {
         // dd($request->all());
         $item = Item::findOrfail($request->item_id);
-
+        $client = Client::findOrFail($request->customer_id);
 
         $transaction = new TransactionDetail;
         $transaction->item = $item->item;
@@ -303,11 +208,11 @@ class TransactionController extends Controller
         $transaction->qty = $request->qty;
         $transaction->price = $item->price;
         $transaction->client_id = $request->customer_id;
+        $transaction->client_address = $client->address ?? '';
         $transaction->dealer_id = $request->dealer;
         $transaction->date = $request->date;
         $transaction->created_by = auth()->user()->id;
         $transaction->save();
-
 
          Alert::success('Successfully Save')->persistent('Dismiss');
         return back();
@@ -361,6 +266,7 @@ class TransactionController extends Controller
                 $transaction->qty = $itemData['quantity'];
                 $transaction->price = $item->price;
                 $transaction->client_id = $customerId;
+                $transaction->client_address = $customer->address ?? '';
                 $transaction->date = date('Y-m-d');
                 $transaction->dealer_id = auth()->user()->id;
                 $transaction->created_by = auth()->user()->id;

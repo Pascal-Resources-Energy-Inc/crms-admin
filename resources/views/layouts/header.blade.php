@@ -997,7 +997,190 @@
                 transform: translateX(0) translateY(-1px);
             }
         }
+        .offline-mode {
+            filter: grayscale(20%);
+        }
+        
+        .offline-mode::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #FF9800, #FF5722);
+            z-index: 10000;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
+
+    <script>
+        window.addEventListener('online', () => {
+            console.log('🌐 You are online');
+            document.body.classList.remove('offline-mode');
+            
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ 
+                    type: 'RESET_OFFLINE_STATE' 
+                });
+            }
+            
+            showOnlineNotification();
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('📵 You are offline');
+            document.body.classList.add('offline-mode');
+            showOfflineChoiceDialog();
+        });
+
+        function showOfflineChoiceDialog() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'You\'re Offline',
+                html: `
+                    <p style="font-size: 16px; margin-bottom: 20px;">
+                        You are currently offline due to weak or no network connection.
+                    </p>
+                    <p style="font-size: 14px; color: #666;">
+                        Choose an option to continue:
+                    </p>
+                `,
+                showDenyButton: true,
+                showCancelButton: false,
+                confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
+                denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
+                confirmButtonColor: '#5DADE2',
+                denyButtonColor: '#95a5a6',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    retryConnection();
+                } else if (result.isDenied) {
+                    redirectToOfflineMode();
+                }
+            });
+        }
+
+        function retryConnection() {
+            Swal.fire({
+                title: 'Checking Connection...',
+                html: 'Please wait while we check your internet connection.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('https://www.google.com/favicon.ico', { 
+                mode: 'no-cors',
+                cache: 'no-store'
+            })
+                .then(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Connected!',
+                        text: 'Your internet connection has been restored.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                })
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Still Offline',
+                        text: 'Unable to connect to the internet. Please check your connection.',
+                        confirmButtonText: 'Try Again',
+                        showDenyButton: true,
+                        denyButtonText: 'Continue Offline',
+                        confirmButtonColor: '#5DADE2',
+                        denyButtonColor: '#95a5a6'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            retryConnection();
+                        } else if (result.isDenied) {
+                            redirectToOfflineMode();
+                        }
+                    });
+                });
+        }
+
+        function redirectToOfflineMode() {
+            const getBasePath = () => {
+                const path = window.location.pathname;
+                if (path.includes('/crms/public')) {
+                    return '/crms/public';
+                }
+                return '';
+            };
+            
+            const offlinePath = `${getBasePath()}/offline/login.html`;
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Switching to Offline Mode',
+                html: 'Redirecting to offline mode...<br><small>Limited features available</small>',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            }).then(() => {
+                window.location.href = offlinePath;
+            });
+        }
+
+        function showOnlineNotification() {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+            Toast.fire({
+                icon: 'success',
+                title: 'You are back online!'
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                const { type } = event.data;
+                
+                switch(type) {
+                    case 'OFFLINE_CHOICE_DIALOG':
+                        showOfflineChoiceDialog();
+                        break;
+                        
+                    case 'ONLINE_STATUS':
+                        if (event.data.status === 'online') {
+                            showOnlineNotification();
+                        }
+                        break;
+                }
+            });
+        }
+
+        if (!navigator.onLine) {
+            document.body.classList.add('offline-mode');
+            setTimeout(() => {
+                showOfflineChoiceDialog();
+            }, 500);
+        }
+    </script>
 </head>
 <body>
 
