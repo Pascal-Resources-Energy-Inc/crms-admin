@@ -157,29 +157,61 @@
       object-position: right bottom;
     }
 
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
     .section-title {
       font-size: 20px;
       font-weight: 700;
       color: #5BC2E7;
-      margin-bottom: 8px;
+      margin: 0;
+    }
+
+    .view-all-btn {
+      background: transparent;
+      border: none;
+      color: #5BC2E7;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .view-all-btn:hover {
+      color: #4facfe;
+      transform: translateX(2px);
     }
 
     .transaction-list {
-      max-height: 500px;
-      overflow-y: auto;
+      max-height: none;
     }
 
-    .transaction-item {
+    .transaction-card {
       background: white;
-      border-radius: 20px;
+      border-radius: 12px;
       margin-bottom: 12px;
-      padding: 16px;
+      padding: 18px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       border: 1px solid #e2e8f0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .transaction-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
     }
 
     .transaction-left {
@@ -191,8 +223,8 @@
     }
 
     .user-avatar {
-      width: 55px;
-      height: 55px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       background: linear-gradient(135deg, #5BC2E7, #4facfe);
       display: flex;
@@ -200,7 +232,7 @@
       justify-content: center;
       color: white;
       font-weight: 700;
-      font-size: 20px;
+      font-size: 18px;
       flex-shrink: 0;
       border: 2px solid #e2e8f0;
     }
@@ -210,33 +242,26 @@
       min-width: 0;
     }
 
-    .transaction-details h6 {
+    .transaction-name {
       font-size: 15px;
       font-weight: 700;
-      color: #000;
+      color: #2c3e50;
       margin: 0 0 4px 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .transaction-details p {
+    .transaction-info {
       font-size: 12px;
       color: #6c757d;
       margin: 0;
     }
 
-    .quantity-badge {
-      width: 38px;
-      height: 38px;
-      background: #5BC2E7;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .transaction-amount {
       font-size: 16px;
       font-weight: 700;
-      color: white;
+      color: #2c3e50;
       flex-shrink: 0;
     }
 
@@ -299,6 +324,23 @@
       display: block;
     }
 
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+
+    .empty-state p {
+      color: #6c757d;
+      margin: 0;
+    }
+
     @media (max-width: 576px) {
       .school-img {
         width: 140px !important;
@@ -306,6 +348,14 @@
       
       .school-img img {
         max-height: 100px;
+      }
+
+      .transaction-name {
+        font-size: 14px;
+      }
+
+      .transaction-amount {
+        font-size: 14px;
       }
     }
   </style>
@@ -352,14 +402,20 @@
         </div>
       </div>
       
-      <h5 class="mb-3 section-title">Latest Transaction</h5>
+      <div class="section-header">
+        <h5 class="section-title">Latest Transactions</h5>
+        <a href="transaction.html" class="view-all-btn">
+          View All
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
       
       <div class="row">
         <div class="col-12">
           <div class="transaction-list" id="transactionList">
-            <div class="text-center py-4">
-              <i class="bi bi-hourglass-split" style="font-size: 48px; color: #999;"></i>
-              <p style="color: #6c757d; margin-top: 16px;">Loading transactions...</p>
+            <div class="empty-state">
+              <i class="bi bi-hourglass-split"></i>
+              <p>Loading transactions...</p>
             </div>
           </div>
         </div>
@@ -404,7 +460,7 @@
       }
       
       const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
-      const swPath = `${basePath}/sw.js`; // ✅ CORRECT FILE NAME
+      const swPath = `${basePath}/sw.js`;
       
       console.log('🔧 Registering Service Worker:', swPath);
       
@@ -433,7 +489,6 @@
           console.error('❌ SW registration failed:', error);
         });
       
-      // Handle SW messages (for auth check)
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data?.type === 'CHECK_AUTH') {
           const currentUserId = localStorage.getItem('current_user_id');
@@ -459,12 +514,76 @@
     // ============================================
     // INDEXEDDB FUNCTIONS
     // ============================================
+    let db;
+    const DB_NAME = 'GazLiteDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'transactions';
+
+    function initGazLiteDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => {
+          console.error('GazLiteDB failed to open');
+          reject(request.error);
+        };
+
+        request.onsuccess = () => {
+          db = request.result;
+          console.log('GazLiteDB opened successfully');
+          resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+          db = event.target.result;
+          
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            const objectStore = db.createObjectStore(STORE_NAME, { 
+              keyPath: 'id', 
+              autoIncrement: true 
+            });
+            
+            objectStore.createIndex('order_id', 'order_id', { unique: true });
+            objectStore.createIndex('customer_id', 'customer_id', { unique: false });
+            objectStore.createIndex('created_at', 'created_at', { unique: false });
+            objectStore.createIndex('payment_method', 'payment_method', { unique: false });
+            objectStore.createIndex('status', 'status', { unique: false });
+            
+            console.log('Transactions object store created');
+          }
+        };
+      });
+    }
+
     function openCRMSDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open('CRMSDB', 3);
         request.onsuccess = (event) => resolve(event.target.result);
         request.onerror = (event) => reject('IndexedDB error');
       });
+    }
+
+    async function getAllTransactions() {
+      try {
+        await initGazLiteDB();
+        
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction([STORE_NAME], 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const request = store.getAll();
+
+          request.onsuccess = () => {
+            resolve(request.result);
+          };
+
+          request.onerror = () => {
+            reject(request.error);
+          };
+        });
+      } catch (error) {
+        console.error('Error getting transactions:', error);
+        return [];
+      }
     }
 
     async function getCurrentUser() {
@@ -530,8 +649,6 @@
         
         const points = await calculateDealerPoints(userId);
         document.getElementById('pointsDisplay').textContent = `${Math.round(points)} points`;
-        
-        await loadDealerTransactions(userId);
       }
     }
 
@@ -549,64 +666,102 @@
         .reduce((sum, t) => sum + (parseFloat(t.points_dealer) || 0), 0);
     }
 
-    async function loadDealerTransactions(userId) {
-      const db = await openCRMSDB();
-      
-      const txTrans = db.transaction('transaction_details', 'readonly');
-      const txStore = txTrans.objectStore('transaction_details');
-      const allTransactions = await new Promise((resolve) => {
-        const request = txStore.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-      
-      const txClients = db.transaction('clients', 'readonly');
-      const clientStore = txClients.objectStore('clients');
-      const clients = await new Promise((resolve) => {
-        const request = clientStore.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-      
-      const dealerTransactions = allTransactions
-        .filter(t => t.dealer_id == userId)
-        .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date))
-        .slice(0, 10);
-      
-      displayTransactions(dealerTransactions, clients);
+    async function loadLatestTransactions() {
+      try {
+        const dbTransactions = await getAllTransactions();
+        
+        let allTransactions = [];
+        
+        if (dbTransactions && dbTransactions.length > 0) {
+          allTransactions = dbTransactions.map(t => ({
+            id: t.id,
+            order_id: t.order_id,
+            customer_name: t.customer_name,
+            customer_serial: t.customer_serial || '',
+            customer_number: t.customer_number || '',
+            payment_method: t.payment_method,
+            total_amount: t.total_amount,
+            items: t.items || [],
+            status: t.status || 'Completed',
+            created_at: t.created_at,
+            transaction_type: 'Sales Invoice'
+          }));
+          
+          console.log('Loaded transactions from GazLiteDB:', allTransactions.length);
+        } else {
+          // Fallback to localStorage
+          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+          
+          allTransactions = completedOrders.map((order, index) => {
+            const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
+              sum + (item.price * item.quantity), 0);
+            
+            return {
+              id: order.order_id || `TXN-${Date.now()}-${index}`,
+              order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
+              customer_name: order.customer?.name || 'Unknown Customer',
+              customer_serial: order.customer?.serial || '',
+              customer_number: order.customer?.number || '',
+              payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
+              total_amount: totalAmount,
+              items: order.items || [],
+              status: order.status || 'Completed',
+              created_at: order.completed_at || order.created_at || new Date().toISOString(),
+              transaction_type: 'Sales Invoice'
+            };
+          });
+        }
+
+        // Sort by date (newest first) and take only 5
+        const latestTransactions = allTransactions
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
+
+        displayTransactions(latestTransactions);
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+        showEmptyState('Error loading transactions');
+      }
     }
 
-    function displayTransactions(transactions, clients) {
+    function displayTransactions(transactions) {
       const div = document.getElementById('transactionList');
       
       if (transactions.length === 0) {
-        div.innerHTML = `
-          <div style="text-align:center;padding:40px;color:#999">
-            <i class="bi bi-inbox" style="font-size:48px;display:block;margin-bottom:16px"></i>
-            <p>No transactions yet</p>
-          </div>`;
+        showEmptyState('No transactions yet');
         return;
       }
       
       div.innerHTML = transactions.map(tx => {
-        const client = clients.find(c => c.id === tx.client_id);
-        const name = client ? client.name : 'Unknown';
+        const name = tx.customer_name;
         const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        const date = new Date(tx.created_at || tx.date);
-        const dateStr = date.toLocaleDateString('en-US', {month:'2-digit', day:'2-digit', year:'numeric'});
+        const date = new Date(tx.created_at);
+        const dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
         const timeStr = date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
         
         return `
-          <div class="transaction-item">
+          <div class="transaction-card">
             <div class="transaction-left">
               <div class="user-avatar">${initials}</div>
               <div class="transaction-details">
-                <h6>${name}</h6>
-                <p>${dateStr} ${timeStr}</p>
+                <div class="transaction-name">${name.toUpperCase()}</div>
+                <p class="transaction-info">${dateStr} ${timeStr}</p>
               </div>
             </div>
-            <div class="quantity-badge">${tx.qty || 0}</div>
+            <div class="transaction-amount">₱${tx.total_amount.toFixed(2)}</div>
           </div>
         `;
       }).join('');
+    }
+
+    function showEmptyState(message) {
+      const div = document.getElementById('transactionList');
+      div.innerHTML = `
+        <div class="empty-state">
+          <i class="bi bi-inbox"></i>
+          <p>${message}</p>
+        </div>
+      `;
     }
 
     function updateUserGreeting(user) {
@@ -626,6 +781,9 @@
       if (user.role === 'Dealer') {
         await fetchDealerInfo(user.id);
       }
+      
+      // Load latest transactions
+      await loadLatestTransactions();
     })();
 
     // ============================================
