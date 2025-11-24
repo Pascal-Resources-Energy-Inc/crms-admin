@@ -512,7 +512,7 @@
     })();
 
     // ============================================
-    // INDEXEDDB FUNCTIONS - COPIED FROM TRANSACTION.HTML
+    // INDEXEDDB - EXACT COPY FROM TRANSACTION.HTML
     // ============================================
     let db;
     const DB_NAME = 'GazLiteDB';
@@ -520,55 +520,188 @@
     const STORE_NAME = 'transactions';
 
     function initDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = () => {
-          console.error('Database failed to open');
-          reject(request.error);
-        };
+            request.onerror = () => {
+                console.error('Database failed to open');
+                reject(request.error);
+            };
 
-        request.onsuccess = () => {
-          db = request.result;
-          console.log('Database opened successfully');
-          resolve(db);
-        };
+            request.onsuccess = () => {
+                db = request.result;
+                console.log('Database opened successfully');
+                resolve(db);
+            };
 
-        request.onupgradeneeded = (event) => {
-          db = event.target.result;
-          
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            const objectStore = db.createObjectStore(STORE_NAME, { 
-              keyPath: 'id', 
-              autoIncrement: true 
-            });
-            
-            objectStore.createIndex('order_id', 'order_id', { unique: true });
-            objectStore.createIndex('customer_id', 'customer_id', { unique: false });
-            objectStore.createIndex('created_at', 'created_at', { unique: false });
-            objectStore.createIndex('payment_method', 'payment_method', { unique: false });
-            objectStore.createIndex('status', 'status', { unique: false });
-            
-            console.log('Object store created');
-          }
-        };
-      });
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+                
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    const objectStore = db.createObjectStore(STORE_NAME, { 
+                        keyPath: 'id', 
+                        autoIncrement: true 
+                    });
+                    
+                    objectStore.createIndex('order_id', 'order_id', { unique: true });
+                    objectStore.createIndex('customer_id', 'customer_id', { unique: false });
+                    objectStore.createIndex('created_at', 'created_at', { unique: false });
+                    objectStore.createIndex('payment_method', 'payment_method', { unique: false });
+                    objectStore.createIndex('status', 'status', { unique: false });
+                    
+                    console.log('Object store created');
+                }
+            };
+        });
     }
 
     function getAllTransactions() {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.getAll();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction([STORE_NAME], 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
 
-        request.onsuccess = () => {
-          resolve(request.result);
-        };
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
 
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    let allTransactions = [];
+    let filteredTransactions = [];
+
+    async function loadTransactions() {
+        try {
+            // Try to load from IndexedDB first
+            const dbTransactions = await getAllTransactions();
+            
+            if (dbTransactions && dbTransactions.length > 0) {
+                allTransactions = dbTransactions.map(t => ({
+                    id: t.id,
+                    order_id: t.order_id,
+                    customer_name: t.customer_name,
+                    customer_serial: t.customer_serial || '',
+                    customer_number: t.customer_number || '',
+                    payment_method: t.payment_method,
+                    total_amount: t.total_amount,
+                    items: t.items || [],
+                    status: t.status || 'Completed',
+                    created_at: t.created_at,
+                    transaction_type: 'Sales Invoice'
+                }));
+                
+                console.log('Loaded transactions from IndexedDB:', allTransactions.length);
+            } else {
+                // Fallback to localStorage
+                loadFromLocalStorage();
+            }
+
+            filteredTransactions = [...allTransactions];
+            
+            // For home page, show only latest 5
+            const latestTransactions = filteredTransactions
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+            
+            renderTransactions(latestTransactions);
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            loadFromLocalStorage();
+        }
+    }
+
+    function loadFromLocalStorage() {
+        try {
+            const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+            
+            // Transform orders into transaction format
+            allTransactions = completedOrders.map((order, index) => {
+                const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
+                    sum + (item.price * item.quantity), 0);
+                
+                return {
+                    id: order.order_id || `TXN-${Date.now()}-${index}`,
+                    order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
+                    customer_name: order.customer?.name || 'Unknown Customer',
+                    customer_serial: order.customer?.serial || '',
+                    customer_number: order.customer?.number || '',
+                    payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
+                    total_amount: totalAmount,
+                    items: order.items || [],
+                    status: order.status || 'Completed',
+                    created_at: order.completed_at || order.created_at || new Date().toISOString(),
+                    transaction_type: 'Sales Invoice'
+                };
+            });
+
+            filteredTransactions = [...allTransactions];
+            
+            // For home page, show only latest 5
+            const latestTransactions = filteredTransactions
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+            
+            renderTransactions(latestTransactions);
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            showEmptyState('Error loading transactions');
+        }
+    }
+
+    function renderTransactions(transactions) {
+        const container = document.getElementById('transactionList');
+
+        if (transactions.length === 0) {
+            showEmptyState('No transactions found');
+            return;
+        }
+
+        let html = '';
+        
+        transactions.forEach(transaction => {
+            const name = transaction.customer_name;
+            const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const time = new Date(transaction.created_at).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            const date = new Date(transaction.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            html += `
+                <div class="transaction-card">
+                    <div class="transaction-left">
+                        <div class="user-avatar">${initials}</div>
+                        <div class="transaction-details">
+                            <div class="transaction-name">${name.toUpperCase()}</div>
+                            <div class="transaction-info">${date} ${time}</div>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">₱${transaction.total_amount.toFixed(2)}</div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function showEmptyState(message) {
+        const container = document.getElementById('transactionList');
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <h3>${message}</h3>
+                <p>Complete some orders to see your transaction history</p>
+            </div>
+        `;
     }
 
     function openCRMSDB() {
@@ -577,122 +710,6 @@
         request.onsuccess = (event) => resolve(event.target.result);
         request.onerror = (event) => reject('IndexedDB error');
       });
-    }
-
-    let allTransactions = [];
-
-    async function loadTransactions() {
-      try {
-        // Try to load from IndexedDB first
-        const dbTransactions = await getAllTransactions();
-        
-        if (dbTransactions && dbTransactions.length > 0) {
-          allTransactions = dbTransactions.map(t => ({
-            id: t.id,
-            order_id: t.order_id,
-            customer_name: t.customer_name,
-            customer_serial: t.customer_serial || '',
-            customer_number: t.customer_number || '',
-            payment_method: t.payment_method,
-            total_amount: t.total_amount,
-            items: t.items || [],
-            status: t.status || 'Completed',
-            created_at: t.created_at,
-            transaction_type: 'Sales Invoice'
-          }));
-          
-          console.log('Loaded transactions from IndexedDB:', allTransactions.length);
-        } else {
-          // Fallback to localStorage
-          loadFromLocalStorage();
-        }
-
-        // Sort by date (newest first) and take only 5 for home page
-        const latestTransactions = allTransactions
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5);
-
-        displayTransactions(latestTransactions);
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-        loadFromLocalStorage();
-      }
-    }
-
-    function loadFromLocalStorage() {
-      try {
-        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-        
-        // Transform orders into transaction format
-        allTransactions = completedOrders.map((order, index) => {
-          const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
-            sum + (item.price * item.quantity), 0);
-          
-          return {
-            id: order.order_id || `TXN-${Date.now()}-${index}`,
-            order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
-            customer_name: order.customer?.name || 'Unknown Customer',
-            customer_serial: order.customer?.serial || '',
-            customer_number: order.customer?.number || '',
-            payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
-            total_amount: totalAmount,
-            items: order.items || [],
-            status: order.status || 'Completed',
-            created_at: order.completed_at || order.created_at || new Date().toISOString(),
-            transaction_type: 'Sales Invoice'
-          };
-        });
-
-        // Sort and take only 5
-        const latestTransactions = allTransactions
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5);
-
-        displayTransactions(latestTransactions);
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-        showEmptyState('Error loading transactions');
-      }
-    }
-
-    function displayTransactions(transactions) {
-      const div = document.getElementById('transactionList');
-      
-      if (transactions.length === 0) {
-        showEmptyState('No transactions yet');
-        return;
-      }
-      
-      div.innerHTML = transactions.map(tx => {
-        const name = tx.customer_name;
-        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        const date = new Date(tx.created_at);
-        const dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-        const timeStr = date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
-        
-        return `
-          <div class="transaction-card">
-            <div class="transaction-left">
-              <div class="user-avatar">${initials}</div>
-              <div class="transaction-details">
-                <div class="transaction-name">${name.toUpperCase()}</div>
-                <p class="transaction-info">${dateStr} ${timeStr}</p>
-              </div>
-            </div>
-            <div class="transaction-amount">₱${tx.total_amount.toFixed(2)}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function showEmptyState(message) {
-      const div = document.getElementById('transactionList');
-      div.innerHTML = `
-        <div class="empty-state">
-          <i class="bi bi-inbox"></i>
-          <p>${message}</p>
-        </div>
-      `;
     }
 
     async function getCurrentUser() {
