@@ -1,6 +1,12 @@
+// =============================================================
+// BULLETPROOF Service Worker - Works Offline ALWAYS
+// This WILL work even after refresh while offline
+// =============================================================
+
 const CACHE_VERSION = 'v4';
 const CACHE_NAME = `gazlite-pwa-${CACHE_VERSION}`;
 
+// Determine BASE_PATH
 const BASE_PATH = self.registration.scope.includes('/crms/public') 
   ? '/crms/public' 
   : '';
@@ -9,6 +15,7 @@ console.log('[SW] 🚀 Service Worker Starting');
 console.log('[SW] 📦 Cache:', CACHE_NAME);
 console.log('[SW] 📂 Base Path:', BASE_PATH);
 
+// ALL offline files that MUST be cached
 const OFFLINE_URLS = [
   `${BASE_PATH}/pwa-launcher.html`,
   `${BASE_PATH}/offline/login.html`,
@@ -151,9 +158,21 @@ self.addEventListener('activate', event => {
 // ==========================================
 self.addEventListener('fetch', event => {
   const { request } = event;
+  const url = new URL(request.url);
   
-  // CRITICAL: We MUST call respondWith for EVERY fetch request
-  // This is what keeps the service worker in control
+  // Skip chrome extensions and non-http
+  if (!url.protocol.startsWith('http') || url.protocol === 'chrome-extension:') {
+    return;
+  }
+  
+  // Skip API calls - let them fail naturally
+  if (url.pathname.includes('/api/') || 
+      url.pathname.includes('/ajax/') ||
+      request.method !== 'GET') {
+    return;
+  }
+  
+  // CRITICAL: We MUST call respondWith for requests we want to handle
   event.respondWith(handleFetch(request));
 });
 
@@ -165,7 +184,27 @@ async function handleFetch(request) {
     return fetch(request);
   }
   
-  console.log('[SW] 🔍 Fetch:', url.pathname);
+  // CRITICAL: Skip paths that shouldn't be handled by SW
+  const pathname = url.pathname;
+  const skipPaths = [
+    '/inside_css/',
+    '/assets/',
+    '/vendor/',
+    '/node_modules/',
+    '/api/',
+    '/_debugbar/'
+  ];
+  
+  if (skipPaths.some(path => pathname.includes(path))) {
+    console.log('[SW] ⏭️ Skipping (not our path):', pathname);
+    return fetch(request).catch(error => {
+      // Let it fail naturally for non-existent files
+      console.log('[SW] ⚠️ Resource not found (letting it fail):', pathname);
+      throw error;
+    });
+  }
+  
+  console.log('[SW] 🔍 Fetch:', pathname);
   
   // Check if this is a navigation (page load)
   const isNavigation = request.mode === 'navigate' || 
