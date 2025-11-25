@@ -41,7 +41,7 @@
 
     body {
       background: #f5f5f5;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-family: 'Poppins', Arial, sans-serif;
       padding-top: 80px;
       padding-bottom: 100px;
     }
@@ -92,12 +92,19 @@
     .coin-icon {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      background: white;
       border-radius: 50%;
       display: flex;
-      align-items: center;
-      justify-content: center;
       box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    }
+
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 4px solid white;
+        margin: 0 auto 15px;
+        object-fit: cover;
     }
 
     .points-text {
@@ -374,7 +381,10 @@
     <div class="header-icons">
       <div class="points-badge">
         <div class="coin-icon">
-          <i class="bi bi-coin" style="font-size: 18px; color: white;"></i>
+          <img src="../images/aaa.png"
+              onerror="this.src='images/aaa.png';"
+              alt="Avatar Image"
+              class="profile-avatar">
         </div>
         <span class="points-text" id="pointsDisplay">0 points</span>
       </div>
@@ -412,12 +422,12 @@
       
       <div class="row">
         <div class="col-12">
-          <div class="transaction-list" id="transactionList">
-            <div class="empty-state">
-              <i class="bi bi-hourglass-split"></i>
-              <p>Loading transactions...</p>
-            </div>
+          <div id="transactions-container">
+          <div class="empty-state">
+              <i class="bi bi-clock-history"></i>
+              <h3>Loading transactions...</h3>
           </div>
+      </div>
         </div>
       </div>
     </section>
@@ -443,438 +453,185 @@
     </a>
   </nav>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="/offline/offline.js"></script>
+<script src="/offline/offline.js"></script>
 
-  <script>
-    // ============================================
-    // SERVICE WORKER REGISTRATION - FIRST!
-    // ============================================
-    (function() {
-      'use strict';
-      
-      if (!('serviceWorker' in navigator)) {
-        console.warn('❌ Service Worker not supported');
-        return;
-      }
-      
-      const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
-      const swPath = `${basePath}/sw.js`;
-      
-      console.log('🔧 Registering Service Worker:', swPath);
-      
-      navigator.serviceWorker.register(swPath, { scope: basePath || '/' })
-        .then(registration => {
-          console.log('✅ Service Worker registered');
-          
-          if (!navigator.serviceWorker.controller) {
-            console.warn('⚠️ No controller yet');
-          } else {
-            console.log('✅ SW controlling page');
-          }
-          
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            console.log('🔄 SW update found');
-            
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🆕 New version available');
-              }
-            });
-          });
-        })
-        .catch(error => {
-          console.error('❌ SW registration failed:', error);
-        });
-      
-      navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data?.type === 'CHECK_AUTH') {
-          const currentUserId = localStorage.getItem('current_user_id');
-          const offlineUser = localStorage.getItem('offlineUser');
-          const authenticated = !!(currentUserId || offlineUser);
-          event.ports[0].postMessage({ authenticated });
-        }
-      });
-    })();
+<script>
+/* ======================================================
+   SERVICE WORKER REGISTRATION
+====================================================== */
+(function() {
+  'use strict';
 
-    // ============================================
-    // AUTH CHECK
-    // ============================================
-    (function() {
-      const offlineUser = localStorage.getItem('offlineUser');
-      const currentUserId = localStorage.getItem('current_user_id');
-      
-      if (!offlineUser && !currentUserId) {
-        window.location.replace('login.html');
-      }
-    })();
+  if (!('serviceWorker' in navigator)) {
+    console.warn('❌ Service Worker not supported');
+    return;
+  }
 
-    // ============================================
-    // INDEXEDDB - EXACT COPY FROM TRANSACTION.HTML
-    // ============================================
-    let db;
-    const DB_NAME = 'GazLiteDB';
-    const DB_VERSION = 1;
-    const STORE_NAME = 'transactions';
+  const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+  const swPath = `${basePath}/sw.js`;
 
-    function initDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+  navigator.serviceWorker.register(swPath, { scope: basePath || '/' })
+    .then(reg => console.log('✅ Service Worker registered'))
+    .catch(err => console.error('❌ SW registration failed:', err));
 
-            request.onerror = () => {
-                console.error('Database failed to open');
-                reject(request.error);
-            };
-
-            request.onsuccess = () => {
-                db = request.result;
-                console.log('Database opened successfully');
-                resolve(db);
-            };
-
-            request.onupgradeneeded = (event) => {
-                db = event.target.result;
-                
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    const objectStore = db.createObjectStore(STORE_NAME, { 
-                        keyPath: 'id', 
-                        autoIncrement: true 
-                    });
-                    
-                    objectStore.createIndex('order_id', 'order_id', { unique: true });
-                    objectStore.createIndex('customer_id', 'customer_id', { unique: false });
-                    objectStore.createIndex('created_at', 'created_at', { unique: false });
-                    objectStore.createIndex('payment_method', 'payment_method', { unique: false });
-                    objectStore.createIndex('status', 'status', { unique: false });
-                    
-                    console.log('Object store created');
-                }
-            };
-        });
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'CHECK_AUTH') {
+      const authenticated = !!(localStorage.getItem('current_user_id') || localStorage.getItem('offlineUser'));
+      event.ports[0].postMessage({ authenticated });
     }
+  });
+})();
 
-    function getAllTransactions() {
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction([STORE_NAME], 'readonly');
-            const store = tx.objectStore(STORE_NAME);
-            const request = store.getAll();
+/* ======================================================
+   AUTH CHECK
+====================================================== */
+(function() {
+  const offlineUser = localStorage.getItem('offlineUser');
+  const currentUserId = localStorage.getItem('current_user_id');
 
-            request.onsuccess = () => {
-                resolve(request.result);
-            };
+  if (!offlineUser && !currentUserId) {
+    window.location.replace('login.html');
+  }
+})();
 
-            request.onerror = () => {
-                reject(request.error);
-            };
-        });
-    }
+/* ======================================================
+   REMOVE GazLiteDB — transactions will show placeholder
+====================================================== */
+function renderTransactionsPlaceholder() {
+  const container = document.getElementById('transactions-container');
+  container.innerHTML = `
+      <div class="empty-state">
+          <i class="bi bi-clock-history"></i>
+          <h3>No transactions available</h3>
+          <p>Transactions are disabled.</p>
+      </div>
+  `;
+}
 
-    let allTransactions = [];
-    let filteredTransactions = [];
+/* ======================================================
+   CRMS IndexedDB for USER + DEALER INFO (unchanged)
+====================================================== */
+function openCRMSDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('CRMSDB', 3);
+    request.onsuccess = e => resolve(e.target.result);
+    request.onerror = () => reject('IndexedDB error');
+  });
+}
 
-    async function loadTransactions() {
-        try {
-            // Try to load from IndexedDB first
-            const dbTransactions = await getAllTransactions();
-            
-            if (dbTransactions && dbTransactions.length > 0) {
-                allTransactions = dbTransactions.map(t => ({
-                    id: t.id,
-                    order_id: t.order_id,
-                    customer_name: t.customer_name,
-                    customer_serial: t.customer_serial || '',
-                    customer_number: t.customer_number || '',
-                    payment_method: t.payment_method,
-                    total_amount: t.total_amount,
-                    items: t.items || [],
-                    status: t.status || 'Completed',
-                    created_at: t.created_at,
-                    transaction_type: 'Sales Invoice'
-                }));
-                
-                console.log('Loaded transactions from IndexedDB:', allTransactions.length);
-            } else {
-                // Fallback to localStorage
-                loadFromLocalStorage();
-            }
+async function getCurrentUser() {
+  try {
+    let id = localStorage.getItem('current_user_id') ||
+             (localStorage.getItem('offlineUser') && JSON.parse(localStorage.getItem('offlineUser')).id);
 
-            filteredTransactions = [...allTransactions];
-            
-            // For home page, show only latest 5
-            const latestTransactions = filteredTransactions
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 5);
-            
-            renderTransactions(latestTransactions);
-        } catch (error) {
-            console.error('Error loading transactions:', error);
-            loadFromLocalStorage();
-        }
-    }
+    if (!id) return window.location.href = 'login.html';
 
-    function loadFromLocalStorage() {
-        try {
-            const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-            
-            // Transform orders into transaction format
-            allTransactions = completedOrders.map((order, index) => {
-                const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
-                    sum + (item.price * item.quantity), 0);
-                
-                return {
-                    id: order.order_id || `TXN-${Date.now()}-${index}`,
-                    order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
-                    customer_name: order.customer?.name || 'Unknown Customer',
-                    customer_serial: order.customer?.serial || '',
-                    customer_number: order.customer?.number || '',
-                    payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
-                    total_amount: totalAmount,
-                    items: order.items || [],
-                    status: order.status || 'Completed',
-                    created_at: order.completed_at || order.created_at || new Date().toISOString(),
-                    transaction_type: 'Sales Invoice'
-                };
-            });
+    const db = await openCRMSDB();
+    const tx = db.transaction('users', 'readonly');
+    const store = tx.objectStore('users');
 
-            filteredTransactions = [...allTransactions];
-            
-            // For home page, show only latest 5
-            const latestTransactions = filteredTransactions
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 5);
-            
-            renderTransactions(latestTransactions);
-        } catch (error) {
-            console.error('Error loading transactions:', error);
-            showEmptyState('Error loading transactions');
-        }
-    }
-
-    function renderTransactions(transactions) {
-        const container = document.getElementById('transactionList');
-
-        if (transactions.length === 0) {
-            showEmptyState('No transactions found');
-            return;
-        }
-
-        let html = '';
-        
-        transactions.forEach(transaction => {
-            const name = transaction.customer_name;
-            const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-            const time = new Date(transaction.created_at).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-            const date = new Date(transaction.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            });
-            
-            html += `
-                <div class="transaction-card">
-                    <div class="transaction-left">
-                        <div class="user-avatar">${initials}</div>
-                        <div class="transaction-details">
-                            <div class="transaction-name">${name.toUpperCase()}</div>
-                            <div class="transaction-info">${date} ${time}</div>
-                        </div>
-                    </div>
-                    <div class="transaction-amount">₱${transaction.total_amount.toFixed(2)}</div>
-                </div>
-            `;
-        });
-
-        container.innerHTML = html;
-    }
-
-    function showEmptyState(message) {
-        const container = document.getElementById('transactionList');
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-clock-history"></i>
-                <h3>${message}</h3>
-                <p>Complete some orders to see your transaction history</p>
-            </div>
-        `;
-    }
-
-    function openCRMSDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('CRMSDB', 3);
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject('IndexedDB error');
-      });
-    }
-
-    async function getCurrentUser() {
-      try {
-        let currentUserId = localStorage.getItem('current_user_id');
-        
-        if (!currentUserId) {
-          const offlineUser = localStorage.getItem('offlineUser');
-          if (offlineUser) {
-            currentUserId = JSON.parse(offlineUser).id;
-          }
-        }
-        
-        if (!currentUserId) {
-          window.location.href = 'login.html';
-          return null;
-        }
-
-        const db = await openCRMSDB();
-        const tx = db.transaction('users', 'readonly');
-        const store = tx.objectStore('users');
-        
-        return new Promise((resolve) => {
-          const request = store.get(parseInt(currentUserId));
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => {
-            window.location.href = 'login.html';
-          };
-        });
-      } catch (error) {
-        console.error('Error:', error);
-        window.location.href = 'login.html';
-        return null;
-      }
-    }
-
-    async function fetchDealerInfo(userId) {
-      const db = await openCRMSDB();
-      const tx = db.transaction('dealers', 'readonly');
-      const store = tx.objectStore('dealers');
-      const dealers = await new Promise((resolve) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-      
-      const dealer = dealers.find(d => d.user_id === userId);
-      
-      if (dealer) {
-        const year = new Date(dealer.created_at).getFullYear();
-        const dealerId = `${year}-${dealer.id}`;
-        const regDate = new Date(dealer.created_at).toLocaleDateString('en-US', {
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric'
-        });
-        
-        document.getElementById('dealerInfo').innerHTML = `
-          <p><strong>Dealer ID:</strong> ${dealerId}</p>
-          <p><strong>Name:</strong> ${dealer.name || 'N/A'}</p>
-          <p><strong>Contact No.:</strong> ${dealer.number || 'N/A'}</p>
-          <p><strong>Registered:</strong> ${regDate}</p>
-        `;
-        
-        const points = await calculateDealerPoints(userId);
-        document.getElementById('pointsDisplay').textContent = `${Math.round(points)} points`;
-      }
-    }
-
-    async function calculateDealerPoints(userId) {
-      const db = await openCRMSDB();
-      const tx = db.transaction('transaction_details', 'readonly');
-      const store = tx.objectStore('transaction_details');
-      const transactions = await new Promise((resolve) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-      
-      return transactions
-        .filter(t => t.dealer_id === userId)
-        .reduce((sum, t) => sum + (parseFloat(t.points_dealer) || 0), 0);
-    }
-
-    function updateUserGreeting(user) {
-      const firstName = user.name.split(' ')[0].toUpperCase();
-      document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
-    }
-
-    // ============================================
-    // LOAD DATA - EXACTLY LIKE TRANSACTION.HTML
-    // ============================================
-    document.addEventListener('DOMContentLoaded', async function() {
-      try {
-        // Get user info first
-        const user = await getCurrentUser();
-        if (!user) return;
-        
-        updateUserGreeting(user);
-        
-        if (user.role === 'Dealer') {
-          await fetchDealerInfo(user.id);
-        }
-
-        // Initialize DB THEN load transactions
-        await initDB();
-        await loadTransactions();
-      } catch (error) {
-        console.error('Error initializing:', error);
-        loadFromLocalStorage();
-      }
+    return new Promise(resolve => {
+      const req = store.get(parseInt(id));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => window.location.href = 'login.html';
     });
+  } catch {
+    window.location.href = 'login.html';
+  }
+}
 
-    // ============================================
-    // NETWORK MONITORING
-    // ============================================
-    const networkStatus = document.getElementById('networkStatus');
-    let isOnline = navigator.onLine;
+async function fetchDealerInfo(userId) {
+  const db = await openCRMSDB();
+  const tx = db.transaction('dealers', 'readonly');
+  const store = tx.objectStore('dealers');
 
-    function showOfflineAlert() {
-      networkStatus.className = 'network-status offline';
-      networkStatus.textContent = '● Offline Mode';
-      
-      Swal.fire({
-        icon: 'warning',
-        title: 'You are offline',
-        text: 'Your data will sync when connection is restored.',
-        timer: 3000,
-        timerProgressBar: true,
-        confirmButtonColor: '#5BC2E7'
-      });
+  const dealers = await new Promise(resolve => {
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+  });
+
+  const dealer = dealers.find(d => d.user_id === userId);
+  if (!dealer) return;
+
+  const regDate = new Date(dealer.created_at).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
+  });
+
+  const dealerId = `${new Date().getFullYear()}-${dealer.id}`;
+
+  document.getElementById('dealerInfo').innerHTML = `
+    <p><strong>Dealer ID:</strong> ${dealerId}</p>
+    <p><strong>Name:</strong> ${dealer.name || 'N/A'}</p>
+    <p><strong>Contact No.:</strong> ${dealer.number || 'N/A'}</p>
+    <p><strong>Registered:</strong> ${regDate}</p>
+  `;
+
+  document.getElementById('pointsDisplay').textContent = `0 points`;
+}
+
+function updateUserGreeting(user) {
+  const firstName = user.name.split(' ')[0].toUpperCase();
+  document.getElementById('userGreeting').textContent = `Hello ${firstName}!`;
+}
+
+/* ======================================================
+   PAGE INIT (NO transactions)
+====================================================== */
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    updateUserGreeting(user);
+
+    if (user.role === 'Dealer') {
+      await fetchDealerInfo(user.id);
     }
 
-    function showOnlineAlert() {
-      networkStatus.className = 'network-status online';
-      networkStatus.textContent = '● Online';
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Back Online!',
-        showCancelButton: true,
-        confirmButtonText: 'Go Online',
-        cancelButtonText: 'Stay Offline',
-        confirmButtonColor: '#5BC2E7'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
-          window.location.href = `${basePath}/home`;
-        } else {
-          setTimeout(() => {
-            networkStatus.style.display = 'none';
-          }, 2000);
-        }
-      });
-    }
+    renderTransactionsPlaceholder();   // <-- No DB, no transactions
+  } catch (err) {
+    console.error(err);
+    renderTransactionsPlaceholder();
+  }
+});
 
-    window.addEventListener('offline', () => {
-      isOnline = false;
-      showOfflineAlert();
-    });
+/* ======================================================
+   NETWORK STATUS
+====================================================== */
+const networkStatus = document.getElementById('networkStatus');
+let isOnline = navigator.onLine;
 
-    window.addEventListener('online', () => {
-      if (!isOnline) {
-        isOnline = true;
-        showOnlineAlert();
-      }
-    });
-  </script>
+function showOfflineAlert() {
+  networkStatus.className = 'network-status offline';
+  networkStatus.textContent = '● Offline Mode';
+  Swal.fire({
+    icon: 'warning',
+    title: 'You are offline',
+    text: 'Your data will sync when connection is restored.',
+    timer: 3000,
+    timerProgressBar: true,
+    confirmButtonColor: '#5BC2E7'
+  });
+}
+
+function showOnlineAlert() {
+  networkStatus.className = 'network-status online';
+  networkStatus.textContent = '● Online';
+}
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  showOfflineAlert();
+});
+
+window.addEventListener('online', () => {
+  if (!isOnline) {
+    isOnline = true;
+    showOnlineAlert();
+  }
+});
+</script>
+
 </body>
 </html>
