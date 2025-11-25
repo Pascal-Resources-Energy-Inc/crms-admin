@@ -485,6 +485,240 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/offline/offline.js"></script>
 
+  <script>
+    async function calculateTotalPoints() {
+      try {
+        // Initialize transactions DB
+        await initTransactionsDB();
+        
+        // Get all transactions from IndexedDB
+        const dbTransactions = await getAllTransactionsFromDB();
+        
+        let totalPoints = 0;
+        
+        // If we have transactions in IndexedDB
+        if (dbTransactions && dbTransactions.length > 0) {
+          dbTransactions.forEach(transaction => {
+            if (transaction.items && Array.isArray(transaction.items)) {
+              transaction.items.forEach(item => {
+                totalPoints += item.quantity || 0;
+              });
+            }
+          });
+        } else {
+          // Fallback to localStorage if no IndexedDB transactions
+          const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+          
+          completedOrders.forEach(order => {
+            if (order.items && Array.isArray(order.items)) {
+              order.items.forEach(item => {
+                totalPoints += item.quantity || 0;
+              });
+            }
+          });
+        }
+        
+        return totalPoints;
+      } catch (error) {
+        console.error('Error calculating points:', error);
+        return 0;
+      }
+    }
+  </script>
+
+  <script>
+    let db;
+    const DB_NAME = 'GazLiteDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'transactions';
+
+    function initTransactionsDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = () => {
+                console.error('Database failed to open');
+                reject(request.error);
+            };
+
+            request.onsuccess = () => {
+                db = request.result;
+                console.log('Transactions database opened successfully');
+                resolve(db);
+            };
+
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+                
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    const objectStore = db.createObjectStore(STORE_NAME, { 
+                        keyPath: 'id', 
+                        autoIncrement: true 
+                    });
+                    
+                    objectStore.createIndex('order_id', 'order_id', { unique: true });
+                    objectStore.createIndex('customer_id', 'customer_id', { unique: false });
+                    objectStore.createIndex('created_at', 'created_at', { unique: false });
+                    objectStore.createIndex('payment_method', 'payment_method', { unique: false });
+                    objectStore.createIndex('status', 'status', { unique: false });
+                }
+            };
+        });
+    }
+
+    function getAllTransactionsFromDB() {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction([STORE_NAME], 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    async function loadLatestTransactions() {
+        try {
+            await initTransactionsDB();
+            
+            const dbTransactions = await getAllTransactionsFromDB();
+            
+            let allTransactions = [];
+            
+            if (dbTransactions && dbTransactions.length > 0) {
+                allTransactions = dbTransactions.map(t => ({
+                    id: t.id,
+                    order_id: t.order_id,
+                    customer_name: t.customer_name,
+                    customer_serial: t.customer_serial || '',
+                    customer_number: t.customer_number || '',
+                    payment_method: t.payment_method,
+                    total_amount: t.total_amount,
+                    items: t.items || [],
+                    status: t.status || 'Completed',
+                    created_at: t.created_at,
+                    transaction_type: 'Sales Invoice'
+                }));
+            } else {
+                const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                
+                allTransactions = completedOrders.map((order, index) => {
+                    const totalAmount = order.total_amount || order.items.reduce((sum, item) => 
+                        sum + (item.price * item.quantity), 0);
+                    
+                    return {
+                        id: order.order_id || `TXN-${Date.now()}-${index}`,
+                        order_id: order.order_id || `ORD-${Date.now().toString().slice(-6)}`,
+                        customer_name: order.customer?.name || 'Unknown Customer',
+                        customer_serial: order.customer?.serial || '',
+                        customer_number: order.customer?.number || '',
+                        payment_method: order.payment_method === 'gcash' ? 'GCash' : 'Cash on hand',
+                        total_amount: totalAmount,
+                        items: order.items || [],
+                        status: order.status || 'Completed',
+                        created_at: order.completed_at || order.created_at || new Date().toISOString(),
+                        transaction_type: 'Sales Invoice'
+                    };
+                });
+            }
+
+            const latestTransactions = allTransactions
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+
+            renderLatestTransactions(latestTransactions);
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            renderTransactionsPlaceholder();
+        }
+    }
+
+    function renderLatestTransactions(transactions) {
+        const container = document.getElementById('transactions-container');
+
+        if (transactions.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-clock-history"></i>
+                    <h3>No transactions yet</h3>
+                    <p>Your recent transactions will appear here</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        
+        transactions.forEach(transaction => {
+            const date = new Date(transaction.created_at);
+            const timeAgo = getTimeAgo(date);
+            const initials = transaction.customer_name.split(' ').map(n => n[0]).join('').toUpperCase();
+            
+            html += `
+                <div class="transaction-card">
+                    <div class="transaction-left">
+                        <div class="user-avatar">${initials}</div>
+                        <div class="transaction-details">
+                            <div class="transaction-name">${transaction.customer_name.toUpperCase()}</div>
+                            <div class="transaction-info">${timeAgo} - ${transaction.transaction_type}</div>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">₱${transaction.total_amount.toFixed(2)}</div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return 'Just now';
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+        } else if (diffInSeconds < 604800) {
+            const days = Math.floor(diffInSeconds / 86400);
+            return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+        } else {
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const user = await getCurrentUser();
+            if (!user) return;
+
+            updateUserGreeting(user);
+
+            if (user.role === 'Dealer') {
+                await fetchDealerInfo(user.id);
+            }
+
+            await loadLatestTransactions();
+        } catch (err) {
+            console.error(err);
+            renderTransactionsPlaceholder();
+        }
+    });
+  </script>
+
 <script>
 (function() {
   'use strict';
@@ -584,7 +818,8 @@ async function fetchDealerInfo(userId) {
     <p><strong>Registered:</strong> ${regDate}</p>
   `;
 
-  document.getElementById('pointsDisplay').textContent = `0 points`;
+  const totalPoints = await calculateTotalPoints();
+  document.getElementById('pointsDisplay').textContent = `${totalPoints} points`;
 }
 
 function updateUserGreeting(user) {

@@ -25,14 +25,14 @@
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
+
         await fetch('https://www.google.com/favicon.ico', {
           method: 'HEAD',
           mode: 'no-cors',
           cache: 'no-store',
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
         return true;
       } catch (error) {
@@ -46,11 +46,11 @@
       if (actuallyOnline !== this.isActuallyOnline) {
         const previousStatus = this.isActuallyOnline;
         this.isActuallyOnline = actuallyOnline;
-        
+
         if (actuallyOnline) {
           this.statusElement.className = 'network-status online';
           this.textElement.textContent = 'Online';
-          
+
           if (!previousStatus && !this.hasShownPrompt) {
             this.hasShownPrompt = true;
             this.showOnlinePrompt();
@@ -59,10 +59,7 @@
         } else {
           this.statusElement.className = 'network-status offline';
           this.textElement.textContent = 'Offline';
-          
-          if (previousStatus) {
-            this.showOfflineNotification();
-          }
+
         }
       } else {
         if (actuallyOnline) {
@@ -93,7 +90,6 @@
           </p>
         `,
         showDenyButton: true,
-        showCancelButton: false,
         confirmButtonText: '<i class="bi bi-wifi"></i> Go Online',
         denyButtonText: '<i class="bi bi-wifi-off"></i> Stay Offline',
         confirmButtonColor: '#2ecc71',
@@ -103,40 +99,10 @@
       }).then((result) => {
         if (result.isConfirmed) {
           this.redirectToOnline();
-        } else if (result.isDenied) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Staying Offline',
-            text: 'You will continue using offline mode.',
-            timer: 2000,
-            showConfirmButton: false
-          });
         }
       });
     },
 
-    showOfflineNotification: function() {
-      if (typeof Swal === 'undefined') {
-        console.warn('SweetAlert2 not loaded');
-        return;
-      }
-
-      Swal.fire({
-        icon: 'warning',
-        title: 'Connection Lost',
-        html: `
-          <p style="font-size: 16px; margin-bottom: 15px;">
-            Your internet connection has been lost.
-          </p>
-          <p style="font-size: 14px; color: #666;">
-            You are now in offline mode. The app will notify you when your connection is restored.
-          </p>
-        `,
-        timer: 3000,
-        timerProgressBar: true,
-        confirmButtonColor: '#5BC2E7'
-      });
-    },
 
     redirectToOnline: function() {
       if (typeof Swal === 'undefined') {
@@ -163,7 +129,7 @@
       const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
       const currentUserId = localStorage.getItem('current_user_id');
       const offlineUser = localStorage.getItem('offlineUser');
-      
+
       if (currentUserId || offlineUser) {
         window.location.href = basePath + '/home';
       } else {
@@ -182,33 +148,13 @@
         this.statusElement.className = 'network-status offline';
         this.textElement.textContent = 'Offline';
         this.isActuallyOnline = false;
-      }
-      
-      if (!actuallyOnline) {
-        if (typeof Swal === 'undefined') {
-          alert('You are currently offline. Please check your internet connection.');
-          return;
-        }
 
-        Swal.fire({
-          icon: 'warning',
-          title: 'No Internet Connection',
-          html: `
-            <p style="font-size: 16px; margin-bottom: 20px;">
-              You are currently offline. Please check your internet connection.
-            </p>
-            <p style="font-size: 14px; color: #666;">
-              The app will automatically detect when your connection is restored.
-            </p>
-          `,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#5BC2E7'
-        });
+
         return;
       }
-      
+
       if (typeof Swal === 'undefined') {
-        if (confirm('You have an active internet connection. Would you like to switch to the online version?')) {
+        if (confirm('Go online?')) {
           this.performRedirect();
         }
         return;
@@ -218,33 +164,20 @@
         title: 'Go Online?',
         html: `
           <div style="text-align: left; padding: 10px;">
-            <p style="margin-bottom: 15px;">
-              <strong>Connection Status:</strong> 🟢 Connected
-            </p>
+            <p style="margin-bottom: 15px;"><strong>Connection Status:</strong> 🟢 Connected</p>
             <p style="font-size: 14px; color: #666;">
-              You have an active internet connection. Would you like to switch to the online version?
+              You have an active internet connection. Switch to online mode?
             </p>
           </div>
         `,
         icon: 'question',
         showDenyButton: true,
-        showCancelButton: false,
         confirmButtonText: '🌐 Go Online',
         denyButtonText: '📵 Stay Offline',
         confirmButtonColor: '#2ecc71',
         denyButtonColor: '#ff4757'
       }).then((result) => {
-        if (result.isConfirmed) {
-          this.redirectToOnline();
-        } else if (result.isDenied) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Staying Offline',
-            text: 'You will continue using offline mode.',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }
+        if (result.isConfirmed) this.redirectToOnline();
       });
     },
 
