@@ -207,7 +207,7 @@
 
         .points-icon-wrapper {
             width: 40px;
-            height: 37px;
+            height: 40px;
             background: white;
             border-radius: 50%;
             display: flex;
@@ -218,8 +218,8 @@
         }
 
         .profile-img {
-            width: 100%;
-            height: 100%;
+            width: 80%;
+            height: 80%;
             object-fit: cover;
             border-radius: 50%;
         }
@@ -1209,7 +1209,7 @@
             <div class="dropdown points-dropdown">
                 <button class="points-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="window.location.href='{{url('rewards')}}'">
                     <div class="points-icon-wrapper">
-                        <img src="{{url('images/coin.png')}}" alt="Profile" class="profile-img">
+                        <img src="{{url('images/icon.png')}}" alt="Profile" class="profile-img">
                     </div>
                     <span class="points-text">{{ $availablePoints ?? 0 }} points</span>
                 </button>

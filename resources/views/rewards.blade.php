@@ -286,7 +286,7 @@ body::before {
     display: inline-block;
     width: 16px;
     height: 16px;
-    background-image: url('images/coin.png');
+    background-image: url('images/icon.png');
     background-size: contain;
     background-repeat: no-repeat;
     margin-right: 4px;
@@ -426,7 +426,7 @@ body::before {
             <div class="points-display">
                 <div class="points-left">
                     <div class="profile-icon">
-                        <img src="{{url('images/coin.png')}}" alt="User" class="user-avatar">
+                        <img src="{{url('images/icon.png')}}" alt="User" class="user-avatar">
                     </div>
                     <div class="points-info loading" id="pointsInfo">
                          <h2 class="fs-7 mb-0">

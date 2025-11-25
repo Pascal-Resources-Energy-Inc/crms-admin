@@ -210,7 +210,7 @@
                                     </p>
                                 </div>
                                 <div class="points-badge {{ $history->type === 'earned' ? 'plus' : 'minus' }}">
-                                     <img src="images/coin.png" alt="coin">
+                                     <img src="images/icon.png" alt="coin">
                                     {{ $history->type === 'earned' ? '+' : '-' }}{{ $history->points }}
                                 </div>
                             </div>
