@@ -1496,11 +1496,12 @@ function handleOfflineStatus() {
         Swal.fire({
             icon: 'warning',
             title: 'You\'re Offline',
+            position: 'top',
             html: `
                 <p style="font-size: 16px; margin-bottom: 20px;">
                     You are currently offline due to weak or no network connection.
                 </p>
-                <p style="font-size: 14px; color: #666;">
+                <p style="font-size: 14px; color: #665;">
                     ${isAuthenticated ? 'Continue using offline mode with limited features?' : 'You can still access the offline login page.'}
                 </p>
             `,

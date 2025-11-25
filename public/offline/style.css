@@ -1,0 +1,177 @@
+.scan-button {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 65px;
+    height: 65px;
+    background: linear-gradient(135deg, #5BC2E7 0%, #4facfe 100%);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 5px solid white;
+    box-shadow: 0 4px 12px rgba(91, 194, 231, 0.3);
+    z-index: 1001;
+    cursor: pointer;
+}
+
+.scan-button i {
+    font-size: 26px;
+    color: white;
+    margin-bottom: 2px;
+}
+
+.scan-button span {
+    font-size: 10px;
+    color: #5BC2E7;
+    font-weight: 600;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    position: absolute;
+    bottom: -18px;
+}
+
+.offline-mode {
+    filter: grayscale(20%);
+}
+
+.offline-mode::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #FF9800, #FF5722);
+    z-index: 10000;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+    }
+    50% { 
+        opacity: 0.5; 
+    }
+}
+
+.network-status-badge {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.network-status-badge.offline {
+    background: #ff4757;
+    color: white;
+    display: flex;
+}
+
+.network-status-badge.online {
+    background: #2ecc71;
+    color: white;
+    display: flex;
+}
+
+.network-status-badge i {
+    font-size: 14px;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .network-status-badge {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
+
+.network-status {
+  position: fixed;
+  top: 90px;
+  right: 10px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.network-status:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.network-status.offline {
+  background: #ff4757;
+  color: white;
+}
+
+.network-status.online {
+  background: #2ecc71;
+  color: white;
+}
+
+.network-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+}
+
+@media (max-width: 576px) {
+  .network-status {
+    top: 85px;
+    right: 8px;
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+  
+  .network-status-dot {
+    width: 6px;
+    height: 6px;
+  }
+}

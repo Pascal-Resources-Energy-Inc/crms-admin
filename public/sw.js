@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v1';
 const CACHE_NAME = `gazlite-pwa-${CACHE_VERSION}`;
 const BASE_PATH = self.registration.scope.includes('/crms/public') ? '/crms/public' : '';
 
@@ -12,6 +12,8 @@ const OFFLINE_URLS = [
   `${BASE_PATH}/offline/transaction.html`,
   `${BASE_PATH}/offline/account.html`,
   `${BASE_PATH}/offline/offline.js`,
+  `${BASE_PATH}/offline/network_status.js`,
+  `${BASE_PATH}/offline/style.css`,
   
   `${BASE_PATH}/images/logo_sa_labas.png`,
   `${BASE_PATH}/images/human.png`,
@@ -55,6 +57,7 @@ const OFFLINE_PAGE_MAP = {
   '/home': 'home.html',
   '/products': 'products.html',
   '/cart': 'cart.html',
+  '/confirm_order': 'confirm_order.html',
   '/transaction': 'transaction.html',
   '/account': 'account.html'
 };

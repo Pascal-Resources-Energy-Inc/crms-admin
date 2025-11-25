@@ -393,3 +393,187 @@
 // =============================================================
 // END OF offline.js
 // =============================================================
+
+
+
+const OfflineNotification = {
+    handleOfflineStatus() {
+        if (window.location.pathname.includes('/offline/')) {
+            console.log('Already on offline page');
+            return;
+        }
+        
+        const offlineUser = localStorage.getItem('offlineUser');
+        const currentUserId = localStorage.getItem('current_user_id');
+        const isAuthenticated = !!(offlineUser || currentUserId);
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'You\'re Offline',
+                position: 'top',
+                html: `
+                    <p style="font-size: 16px; margin-bottom: 20px;">
+                        You are currently offline due to weak or no network connection.
+                    </p>
+                    <p style="font-size: 14px; color: #665;">
+                        ${isAuthenticated ? 'Continue using offline mode with limited features?' : 'You can still access the offline login page.'}
+                    </p>
+                `,
+                showDenyButton: true,
+                showCancelButton: false,
+                confirmButtonText: '<i class="fas fa-sync-alt"></i> Retry Connection',
+                denyButtonText: '<i class="fas fa-wifi-slash"></i> Continue Offline',
+                confirmButtonColor: '#5DADE2',
+                denyButtonColor: '#95a5a6',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.retryConnection();
+                } else if (result.isDenied) {
+                    this.redirectToOfflineMode(isAuthenticated);
+                }
+            });
+        } else {
+            this.redirectToOfflineMode(isAuthenticated);
+        }
+    },
+
+    retryConnection() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Checking Connection...',
+                html: 'Please wait while we check your internet connection.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
+        fetch('https://www.google.com/favicon.ico', { 
+            mode: 'no-cors',
+            cache: 'no-store'
+        })
+        .then(() => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Connected!',
+                    text: 'Your internet connection has been restored.',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                window.location.reload();
+            }
+        })
+        .catch(() => {
+            if (typeof Swal !== 'undefined') {
+                const offlineUser = localStorage.getItem('offlineUser');
+                const isAuthenticated = !!offlineUser;
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Still Offline',
+                    text: 'Unable to connect to the internet.',
+                    confirmButtonText: 'Try Again',
+                    showDenyButton: true,
+                    denyButtonText: 'Continue Offline',
+                    confirmButtonColor: '#5DADE2',
+                    denyButtonColor: '#95a5a6'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.retryConnection();
+                    } else if (result.isDenied) {
+                        this.redirectToOfflineMode(isAuthenticated);
+                    }
+                });
+            }
+        });
+    },
+
+    redirectToOfflineMode(isAuthenticated = false) {
+        const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+        const targetPage = isAuthenticated ? 'home.html' : 'login.html';
+        const offlinePath = `${basePath}/offline/${targetPage}`;
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Switching to Offline Mode',
+                html: `Redirecting to offline ${isAuthenticated ? 'home' : 'login'}...<br><small>Limited features available</small>`,
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            }).then(() => {
+                window.location.href = offlinePath;
+            });
+        } else {
+            window.location.href = offlinePath;
+        }
+    },
+
+    showConnectedNotification() {
+        if (typeof Swal !== 'undefined') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+            Toast.fire({
+                icon: 'success',
+                title: 'You are back online!'
+            });
+        }
+    },
+
+    init() {
+        window.addEventListener('offline', () => {
+            console.log('Network connection lost');
+            document.body.classList.add('offline-mode');
+            this.handleOfflineStatus();
+        });
+
+        window.addEventListener('online', () => {
+            console.log('Network connection restored');
+            document.body.classList.remove('offline-mode');
+            
+            this.showConnectedNotification();
+
+            if (navigator.serviceWorker?.controller) {
+                navigator.serviceWorker.controller.postMessage({ 
+                    type: 'RESET_OFFLINE_STATE' 
+                });
+            }
+
+            if (window.location.pathname.includes('/offline/')) {
+                const basePath = window.location.pathname.includes('/crms/public') ? '/crms/public' : '';
+                setTimeout(() => {
+                    window.location.href = `${basePath}/login`;
+                }, 2000);
+            }
+        });
+
+        if (!navigator.onLine) {
+            console.log('Starting offline');
+            document.body.classList.add('offline-mode');
+            setTimeout(() => {
+                this.handleOfflineStatus();
+            }, 1000);
+        }
+    }
+};
+
+window.OfflineNotification = OfflineNotification;

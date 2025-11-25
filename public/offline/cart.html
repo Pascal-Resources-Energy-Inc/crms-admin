@@ -759,7 +759,9 @@
             localStorage.setItem('dealerOrderData', JSON.stringify(orderData));
             
             // Navigate to confirm order page
-            window.location.href = 'confirm_order.html';
+            window.location.href = window.location.pathname.includes('/offline/') 
+            ? 'confirm_order.html' 
+            : '/offline/confirm_order.html';
         }
 
         function showToast(message) {

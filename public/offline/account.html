@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Account Page</title>
 
-  <!-- Bootstrap Icons (for icons like bi-person, bi-receipt, etc.) -->
+  <link rel="stylesheet" href="../offline/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <style>
@@ -90,7 +90,7 @@
 
     .menu-section {
         background: white;
-        margin: -20px 20px 20px;
+        margin: 20px 20px 20px;
         border-radius: 20px;
         padding: 20px 0;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -229,7 +229,7 @@
         }
 
         .menu-section {
-            margin: -15px 15px 15px;
+            margin: 15px 15px 15px;
         }
 
         .logout-section {
@@ -240,6 +240,11 @@
 </head>
 
 <body>
+  <div class="network-status" id="networkStatus" onclick="toggleNetworkMode()">
+      <span class="network-status-dot"></span>
+      <span id="networkStatusText">Checking...</span>
+  </div>
+  
   <div class="account-wrapper">
     <div class="account-header">
       <button class="back-button" onclick="window.location.href='home.html'">
@@ -252,17 +257,6 @@
               class="profile-avatar">
         <h2 class="profile-name">Maria Catalina Ramos Rances</h2>
         <p class="profile-email">maria.catalina.rances@gmail.com</p>
-      </div>
-    </div>
-
-    <div class="stats-section">
-      <div class="stat-card">
-        <h3 class="stat-value">163</h3>
-        <p class="stat-label">Total Points</p>
-      </div>
-      <div class="stat-card">
-        <h3 class="stat-value">163</h3>
-        <p class="stat-label">Transactions</p>
       </div>
     </div>
 
@@ -312,6 +306,10 @@
     </div>
   </div>
 
-  <script src="/offline/offline.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/offline/offline.js"></script>
+    <script src="network_status.js"></script>
+    <script src="../offline/network_status.js"></script>
 </body>
 </html>

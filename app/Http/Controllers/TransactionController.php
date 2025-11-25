@@ -37,209 +37,143 @@ class TransactionController extends Controller
     }
 
     public function store(Request $request)
-{
-    try {
-        // Validate request with custom error messages
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'qty' => 'required|integer|min:1',
-            'customer_id' => 'required|exists:clients,id'
-        ], [
-            'item_id.required' => 'Item ID is required',
-            'item_id.exists' => 'Item does not exist in database',
-            'qty.required' => 'Quantity is required',
-            'qty.integer' => 'Quantity must be a number',
-            'qty.min' => 'Quantity must be at least 1',
-            'customer_id.required' => 'Customer ID is required',
-            'customer_id.exists' => 'Customer does not exist in database'
-        ]);
+    {
+        try {
+            $validated = $request->validate([
+                'item_id' => 'required|exists:items,id',
+                'qty' => 'required|integer|min:1',
+                'customer_id' => 'required|exists:clients,id',
+                'payment_method' => 'nullable|string|in:cash,gcash,bank'
+            ]);
 
-        $item = Item::findOrFail($request->item_id);
-        $client = Client::findOrFail($request->customer_id);
+            $item = Item::findOrFail($request->item_id);
+            $client = Client::findOrFail($request->customer_id);
 
-        $transaction = new TransactionDetail;
-        $transaction->item = $item->item;
-        $transaction->points_dealer = $item->dealer_points * $request->qty;
-        $transaction->points_client = $item->customer_points * $request->qty;
-        $transaction->item_description = $item->item_description;
-        $transaction->qty = $request->qty;
-        $transaction->price = $item->price;
-        $transaction->client_id = $request->customer_id;
-        $transaction->client_address = $client->address ?? '';
-        $transaction->date = date('Y-m-d');
-        $transaction->dealer_id = auth()->user()->id;
-        $transaction->created_by = auth()->user()->id;
-        $transaction->payment_method = $request->payment_method ?? 'cash';
-        $transaction->save();
+            $transaction = new TransactionDetail;
+            $transaction->item = $item->item;
+            $transaction->points_dealer = $item->dealer_points * $request->qty;
+            $transaction->points_client = $item->customer_points * $request->qty;
+            $transaction->item_description = $item->item_description;
+            $transaction->qty = $request->qty;
+            $transaction->price = $item->price;
+            $transaction->client_id = $request->customer_id;
+            $transaction->client_address = $client->address ?? '';
+            $transaction->date = date('Y-m-d');
+            $transaction->dealer_id = auth()->user()->id;
+            $transaction->created_by = auth()->user()->id;
+            $transaction->payment_method = $request->payment_method ?? 'cash';
+            $transaction->save();
 
-        // Check if request expects JSON (for AJAX calls)
-        if ($request->expectsJson() || $request->ajax()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaction saved successfully',
+                    'transaction_id' => $transaction->id
+                ], 200);
+            }
+
+            Alert::success('Successfully Save')->persistent('Dismiss');
+            return back();
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
+            Alert::error('Validation failed')->persistent('Dismiss');
+            return back()->withErrors($e->errors())->withInput();
+
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to save transaction: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            Alert::error('Failed to save transaction')->persistent('Dismiss');
+            return back();
+        }
+    }
+
+    public function storeApi(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'item_id' => 'required|exists:items,id',
+                'customer_id' => 'required|exists:clients,id',
+                'qty' => 'required|integer|min:1',
+                'payment_method' => 'nullable|string|in:cash,gcash,bank',
+                'dealer_id' => 'nullable|exists:users,id'
+            ]);
+
+            $item = Item::findOrFail($request->item_id);
+            $client = Client::findOrFail($request->customer_id);
+
+            $dealerId = $request->dealer_id ?? (auth()->check() ? auth()->id() : null);
+            
+            if (!$dealerId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dealer ID is required. Please ensure you are logged in.'
+                ], 422);
+            }
+
+            $transaction = new TransactionDetail;
+            $transaction->item = $item->item;
+            $transaction->points_dealer = $item->dealer_points * $request->qty;
+            $transaction->points_client = $item->customer_points * $request->qty;
+            $transaction->item_description = $item->item_description;
+            $transaction->qty = $request->qty;
+            $transaction->price = $item->price;
+            $transaction->client_id = $request->customer_id;
+            $transaction->client_address = $client->address ?? '';
+            $transaction->date = date('Y-m-d');
+            $transaction->dealer_id = $dealerId;
+            $transaction->created_by = $dealerId;
+            $transaction->payment_method = $request->payment_method ?? 'cash';
+            $transaction->save();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Transaction saved successfully',
-                'transaction_id' => $transaction->id
-            ], 200);
-        }
+                'data' => [
+                    'transaction_id' => $transaction->id,
+                    'item' => $transaction->item,
+                    'qty' => $transaction->qty,
+                    'price' => $transaction->price,
+                    'total' => $transaction->price * $transaction->qty,
+                    'points_dealer' => $transaction->points_dealer,
+                    'points_client' => $transaction->points_client,
+                    'client_address' => $transaction->client_address,
+                    'created_at' => $transaction->created_at
+                ]
+            ], 201);
 
-        // For regular form submissions
-        Alert::success('Successfully Save')->persistent('Dismiss');
-        return back();
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('Validation Error: ' . json_encode([
-            'errors' => $e->errors(),
-            'request_data' => $request->all()
-        ]));
-        
-        if ($request->expectsJson() || $request->ajax()) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors(),
-                'request_data' => $request->all()
+                'errors' => $e->errors()
             ], 422);
-        }
-        
-        Alert::error('Validation failed')->persistent('Dismiss');
-        return back()->withErrors($e->errors())->withInput();
 
-    } catch (\Exception $e) {
-        \Log::error('Transaction Store Error: ' . $e->getMessage() . ' | Request: ' . json_encode($request->all()));
-        
-        if ($request->expectsJson() || $request->ajax()) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to save transaction: ' . $e->getMessage(),
-                'request_data' => $request->all()
+                'message' => 'Item or Customer not found. Please check the IDs.'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save transaction: ' . $e->getMessage()
             ], 500);
         }
-        
-        Alert::error('Failed to save transaction')->persistent('Dismiss');
-        return back();
     }
-}
-
-    public function storeApi(Request $request)
-{
-    \Log::info('=== API Store Request ===', [
-        'all_data' => $request->all(),
-        'headers' => $request->headers->all(),
-        'auth_check' => auth()->check(),
-        'auth_id' => auth()->id()
-    ]);
-    
-    try {
-        // Validate the request
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'customer_id' => 'required|exists:clients,id',
-            'qty' => 'required|integer|min:1',
-            'payment_method' => 'nullable|string|in:cash,gcash,bank',
-            'dealer_id' => 'nullable|exists:users,id'
-        ]);
-
-        // Get item details
-        $item = Item::findOrFail($request->item_id);
-        $client = Client::findOrFail($request->customer_id);
-
-        // Determine dealer_id
-        $dealerId = $request->dealer_id ?? (auth()->check() ? auth()->id() : null);
-        
-        if (!$dealerId) {
-            \Log::error('Dealer ID missing', [
-                'auth_check' => auth()->check(),
-                'auth_id' => auth()->id(),
-                'request_dealer_id' => $request->dealer_id
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Dealer ID is required. Please ensure you are logged in.'
-            ], 422);
-        }
-
-        \Log::info('Creating transaction', [
-            'item_id' => $item->id,
-            'customer_id' => $request->customer_id,
-            'dealer_id' => $dealerId,
-            'qty' => $request->qty
-        ]);
-
-        // Create transaction
-        $transaction = new TransactionDetail;
-        $transaction->item = $item->item;
-        $transaction->points_dealer = $item->dealer_points * $request->qty;
-        $transaction->points_client = $item->customer_points * $request->qty;
-        $transaction->item_description = $item->item_description;
-        $transaction->qty = $request->qty;
-        $transaction->price = $item->price;
-        $transaction->client_id = $request->customer_id;
-        $transaction->client_address = $client->address ?? '';
-        $transaction->date = date('Y-m-d');
-        $transaction->dealer_id = $dealerId;
-        $transaction->created_by = $dealerId;
-        $transaction->payment_method = $request->payment_method ?? 'cash';
-        $transaction->save();
-        
-        \Log::info('✓ Transaction saved successfully', [
-            'transaction_id' => $transaction->id,
-            'item' => $transaction->item,
-            'qty' => $transaction->qty
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaction saved successfully',
-            'data' => [
-                'transaction_id' => $transaction->id,
-                'item' => $transaction->item,
-                'qty' => $transaction->qty,
-                'price' => $transaction->price,
-                'total' => $transaction->price * $transaction->qty,
-                'points_dealer' => $transaction->points_dealer,
-                'points_client' => $transaction->points_client,
-                'client_address' => $transaction->client_address,
-                'created_at' => $transaction->created_at
-            ]
-        ], 201);
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('❌ Validation Error', [
-            'errors' => $e->errors(),
-            'request_data' => $request->all()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $e->errors()
-        ], 422);
-
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        \Log::error('❌ Model Not Found', [
-            'message' => $e->getMessage(),
-            'request_data' => $request->all()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Item or Customer not found. Please check the IDs.'
-        ], 404);
-
-    } catch (\Exception $e) {
-        \Log::error('❌ Transaction Store Error', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'request_data' => $request->all()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to save transaction: ' . $e->getMessage()
-        ], 500);
-    }
-}
 
     public function storeAdmin(Request $request)
     {

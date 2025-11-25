@@ -661,7 +661,6 @@ async function syncOfflineTransactions() {
     const failedCountEl = document.getElementById('failedCount');
     const lastSyncEl = document.getElementById('lastSync');
     
-    // Check internet connectivity first
     if (!navigator.onLine) {
         Swal.fire({
             icon: 'error',
@@ -673,8 +672,6 @@ async function syncOfflineTransactions() {
     }
     
     const transactions = await getOfflineTransactions();
-    
-    console.log('Transactions to sync:', transactions);
     
     if (!transactions || transactions.length === 0) {
         Swal.fire({
@@ -688,7 +685,6 @@ async function syncOfflineTransactions() {
         return;
     }
     
-    // Update UI
     button.disabled = true;
     button.classList.add('syncing');
     button.querySelector('span').textContent = 'Syncing...';
@@ -699,11 +695,9 @@ async function syncOfflineTransactions() {
     let failedCount = 0;
     const failedTransactions = [];
     
-    // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
     if (!csrfToken) {
-        console.error('CSRF token not found');
         Swal.fire({
             icon: 'error',
             title: 'Security Error',
@@ -716,26 +710,20 @@ async function syncOfflineTransactions() {
         return;
     }
     
-    // Sync each transaction
     for (const transaction of transactions) {
         try {
-            console.log('Processing transaction:', transaction);
-            
-            // Extract and validate data
             let itemId = null;
             let customerId = null;
             let dealerId = null;
             let quantity = 1;
             let paymentMethod = 'cash';
             
-            // Handle item_id
             if (transaction.items && transaction.items.length > 0) {
                 itemId = transaction.items[0].id;
             } else if (transaction.item_id) {
                 itemId = transaction.item_id;
             }
             
-            // Handle customer_id (multiple possible field names)
             if (Array.isArray(transaction.customer_id)) {
                 customerId = transaction.customer_id[0];
             } else if (transaction.customer_id) {
@@ -746,28 +734,24 @@ async function syncOfflineTransactions() {
                 customerId = transaction.client_id;
             }
             
-            // Handle dealer_id (multiple possible field names)
             if (Array.isArray(transaction.dealer_id)) {
                 dealerId = transaction.dealer_id[0];
             } else if (transaction.dealer_id) {
                 dealerId = transaction.dealer_id;
             }
             
-            // Handle quantity
             if (transaction.quantity) {
                 quantity = parseInt(transaction.quantity);
             } else if (transaction.qty) {
                 quantity = parseInt(transaction.qty);
             }
             
-            // Handle payment method
             if (transaction.payment_method) {
                 paymentMethod = transaction.payment_method;
             } else if (transaction.paymentMethod) {
                 paymentMethod = transaction.paymentMethod;
             }
             
-            // Validate required fields
             if (!itemId) {
                 throw new Error('Item ID is missing');
             }
@@ -778,7 +762,6 @@ async function syncOfflineTransactions() {
                 throw new Error('Invalid quantity: ' + quantity);
             }
             
-            // Build transaction data (dealer_id is optional - will be set from auth on server)
             const transactionData = {
                 item_id: itemId,
                 qty: quantity,
@@ -786,14 +769,10 @@ async function syncOfflineTransactions() {
                 payment_method: paymentMethod
             };
             
-            // Only include dealer_id if it exists
             if (dealerId) {
                 transactionData.dealer_id = dealerId;
             }
             
-            console.log('Sending data:', transactionData);
-            
-            // Send to API endpoint with credentials
             const response = await fetch('/api/transactions/store', {
                 method: 'POST',
                 headers: {
@@ -802,38 +781,25 @@ async function syncOfflineTransactions() {
                     'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                credentials: 'same-origin', // Important: include cookies for authentication
+                credentials: 'same-origin',
                 body: JSON.stringify(transactionData)
             });
             
-            console.log('Response status:', response.status);
-            
-            // Parse response
             let result;
             try {
                 const responseText = await response.text();
-                console.log('Raw response:', responseText);
-                
                 if (!responseText) {
                     throw new Error('Empty response from server');
                 }
-                
                 result = JSON.parse(responseText);
             } catch (parseError) {
-                console.error('Failed to parse response:', parseError);
                 throw new Error(`Server returned invalid response (Status: ${response.status})`);
             }
             
-            console.log('Parsed response:', result);
-            
-            // Check if sync was successful
             if (response.ok && result.success) {
-                // Delete from IndexedDB after successful sync
                 await deleteOfflineTransaction(transaction.id);
                 syncedCount++;
-                console.log('✓ Successfully synced transaction ID:', transaction.id);
             } else {
-                // Extract detailed error message
                 let errorMessage = 'Unknown error';
                 
                 if (result.message) {
@@ -850,17 +816,7 @@ async function syncOfflineTransactions() {
                 failedTransactions.push({
                     transaction: transaction,
                     error: errorMessage,
-                    status: response.status,
-                    sentData: transactionData,
-                    response: result
-                });
-                
-                console.error('✗ Failed to sync transaction:', {
-                    transactionId: transaction.id,
-                    status: response.status,
-                    error: errorMessage,
-                    sentData: transactionData,
-                    serverResponse: result
+                    status: response.status
                 });
             }
             
@@ -868,38 +824,26 @@ async function syncOfflineTransactions() {
             failedCount++;
             failedTransactions.push({
                 transaction: transaction,
-                error: error.message,
-                stack: error.stack
-            });
-            console.error('✗ Exception while syncing transaction:', {
-                error: error.message,
-                transaction: transaction,
-                stack: error.stack
+                error: error.message
             });
         }
         
-        // Update progress display
         syncedCountEl.textContent = syncedCount;
         failedCountEl.textContent = failedCount;
         pendingCountEl.textContent = transactions.length - syncedCount - failedCount;
         
-        // Small delay between requests to avoid overwhelming server
         await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    // Reset UI state
     button.disabled = false;
     button.classList.remove('syncing');
     button.querySelector('span').textContent = 'Sync Offline Transactions';
     
-    // Update last sync time
     const now = new Date();
     lastSyncEl.textContent = now.toLocaleString();
     
-    // Show result summary
     if (syncedCount > 0) {
         if (failedCount > 0) {
-            // Partial success - show which ones failed
             const errorSummary = failedTransactions.slice(0, 3).map((ft, idx) => {
                 const txId = ft.transaction.id || ft.transaction.timestamp || (idx + 1);
                 return `<li class="text-start"><strong>Transaction ${txId}:</strong> ${ft.error}</li>`;
@@ -925,18 +869,9 @@ async function syncOfflineTransactions() {
                 `,
                 confirmButtonColor: '#5BC2E7',
                 confirmButtonText: 'OK',
-                width: '600px',
-                footer: '<small>Check browser console for detailed error logs</small>'
+                width: '600px'
             });
-            
-            console.group('❌ Failed Transactions Details');
-            failedTransactions.forEach((ft, idx) => {
-                console.error(`Transaction ${idx + 1}:`, ft);
-            });
-            console.groupEnd();
-            
         } else {
-            // Complete success
             Swal.fire({
                 icon: 'success',
                 title: 'Sync Complete!',
@@ -952,14 +887,12 @@ async function syncOfflineTransactions() {
             });
         }
     } else {
-        // Complete failure
         const firstError = failedTransactions[0];
         let errorDetail = 'Unknown error occurred';
         
         if (firstError) {
             errorDetail = firstError.error;
             
-            // Add more context if available
             if (firstError.status === 422) {
                 errorDetail += '<br><small class="text-muted">This usually means some required data is missing or invalid.</small>';
             } else if (firstError.status === 401 || firstError.status === 403) {
@@ -979,55 +912,20 @@ async function syncOfflineTransactions() {
                     <p class="text-danger mb-0">${errorDetail}</p>
                 </div>
             `,
-            confirmButtonColor: '#5BC2E7',
-            footer: '<small>Check browser console (F12) for technical details</small>'
+            confirmButtonColor: '#5BC2E7'
         });
-        
-        console.group('❌ All Transactions Failed');
-        console.error('Failed transactions:', failedTransactions);
-        console.groupEnd();
     }
     
-    // Check for remaining transactions
     await checkPendingTransactions();
 }
 
-// Network status monitoring
 window.addEventListener('online', () => {
-    console.log('🌐 Network connection restored');
     checkPendingTransactions();
 });
 
 window.addEventListener('offline', () => {
-    console.log('📡 Network connection lost - transactions will be saved offline');
+    console.log('Network connection lost');
 });
-
-// Debug helper function
-async function debugSyncData() {
-    console.group('🔍 Sync Debug Information');
-    
-    const transactions = await getOfflineTransactions();
-    console.log('📦 Total pending transactions:', transactions.length);
-    
-    if (transactions.length > 0) {
-        console.log('📋 First transaction:', transactions[0]);
-        console.log('🔑 Keys in transaction:', Object.keys(transactions[0]));
-        
-        // Check for common data issues
-        const firstTx = transactions[0];
-        console.log('✓ Validation:');
-        console.log('  - Has item_id:', !!(firstTx.item_id || (firstTx.items && firstTx.items[0])));
-        console.log('  - Has customer_id:', !!(firstTx.customer_id || firstTx.client_id));
-        console.log('  - Has dealer_id:', !!firstTx.dealer_id);
-        console.log('  - Has quantity:', !!(firstTx.quantity || firstTx.qty));
-    }
-    
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    console.log('🔒 CSRF Token present:', !!csrfToken);
-    console.log('🌐 Online status:', navigator.onLine);
-    
-    console.groupEnd();
-}
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
