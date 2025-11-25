@@ -175,7 +175,7 @@
     .section-title {
       font-size: 20px;
       font-weight: 700;
-      color: #5BC2E7;
+      color: #000000;
       margin: 0;
     }
 
@@ -348,6 +348,34 @@
     #qr-reader {
       border: 2px solid #5BC2E7;
       border-radius: 8px;
+      width: 100%;
+      min-height: 250px;
+    }
+
+    #qr-reader video {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    #qr-reader__scan_region {
+      background: transparent !important;
+    }
+
+    #qr-reader__dashboard {
+      display: none !important;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .alert-info {
+      background: #e7f6fd;
+      border: 1px solid #5BC2E7;
+      color: #2c3e50;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
     }
 
     .network-status {
@@ -550,66 +578,66 @@
   <script src="/offline/offline.js"></script>
 
   <script>
-    let html5QrCode = null;
-    let isScanning = false;
+      let html5QrCode = null;
+      let isScanning = false;
 
-    // Initialize QR Scanner when modal opens
-    document.getElementById('qrScannerModal')?.addEventListener('shown.bs.modal', function () {
-      if (!isScanning) {
-        startQRScanner();
-      }
-    });
-
-    // Stop scanner when modal closes
-    document.getElementById('qrScannerModal')?.addEventListener('hidden.bs.modal', function () {
-      stopQRScanner();
-    });
-
-    function startQRScanner() {
-      if (html5QrCode) {
-        html5QrCode.clear();
-      }
-
-      html5QrCode = new Html5Qrcode("qr-reader");
-      
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      };
-
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess,
-        onScanError
-      ).then(() => {
-        isScanning = true;
-        console.log("QR Scanner started");
-      }).catch(err => {
-        console.error("Failed to start scanner:", err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Camera Error',
-          text: 'Unable to access camera. Please check permissions.',
-          confirmButtonColor: '#5BC2E7'
-        });
+      // Initialize QR Scanner when modal opens
+      document.getElementById('qrScannerModal')?.addEventListener('shown.bs.modal', function () {
+        if (!isScanning) {
+          startQRScanner();
+        }
       });
-    }
 
-    function stopQRScanner() {
-      if (html5QrCode && isScanning) {
-        html5QrCode.stop().then(() => {
+      // Stop scanner when modal closes
+      document.getElementById('qrScannerModal')?.addEventListener('hidden.bs.modal', function () {
+        stopQRScanner();
+      });
+
+      function startQRScanner() {
+        if (html5QrCode) {
           html5QrCode.clear();
-          isScanning = false;
-          console.log("QR Scanner stopped");
+        }
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+        
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
+        html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          onScanError
+        ).then(() => {
+          isScanning = true;
+          console.log("QR Scanner started");
         }).catch(err => {
-          console.error("Error stopping scanner:", err);
+          console.error("Failed to start scanner:", err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Camera Error',
+            text: 'Unable to access camera. Please check permissions.',
+            confirmButtonColor: '#5BC2E7'
+          });
         });
       }
-    }
 
-    async function onScanSuccess(decodedText, decodedResult) {
+      function stopQRScanner() {
+        if (html5QrCode && isScanning) {
+          html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+            isScanning = false;
+            console.log("QR Scanner stopped");
+          }).catch(err => {
+            console.error("Error stopping scanner:", err);
+          });
+        }
+      }
+
+      async function onScanSuccess(decodedText, decodedResult) {
         console.log("QR Code scanned:", decodedText);
         
         stopQRScanner();
@@ -620,6 +648,12 @@
         }
         
         await searchCustomerBySerial(decodedText);
+      }
+
+      function onScanError(errorMessage) {
+        // Silently handle scan errors
+        // This is called when no QR code is detected in frame
+        // Don't log to avoid console spam
       }
 
       async function searchCustomerBySerial(serialNumber) {
@@ -741,7 +775,7 @@
         const visible = str.slice(-showLast);
         return masked + visible;
       }
-    </script>
+  </script>
 
   <script>
     async function calculateTotalPoints() {
