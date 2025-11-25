@@ -815,6 +815,97 @@
             margin: 0;
         }
 
+        .loyalty-qr-code-image {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .loyalty-qr-code-image:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .qr-zoom-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .qr-zoom-overlay.active {
+            display: flex;
+        }
+
+        .qr-zoom-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.3s ease;
+        }
+
+        .qr-zoom-container img {
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 500px;
+            object-fit: contain;
+        }
+
+        .qr-zoom-close {
+            position: absolute;
+            top: -50px;
+            right: -10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .qr-zoom-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .qr-zoom-close {
+                top: -45px;
+                width: 35px;
+                height: 35px;
+                font-size: 20px;
+            }
+        }
+
         /* Responsive Breakpoints */
         @media (max-width: 768px) {
             .loyalty-card-close-btn {
@@ -1340,6 +1431,14 @@
         </div>
     </div>
 
+    <!-- QR Code Zoom Overlay -->
+    <div class="qr-zoom-overlay" id="qrZoomOverlay">
+        <div class="qr-zoom-container">
+            <button class="qr-zoom-close" id="qrZoomClose">&times;</button>
+            <img id="qrZoomImage" src="" alt="QR Code">
+        </div>
+    </div>
+
     <!-- Include QR Scanner Modal -->
     @include('qr_scanner')
 
@@ -1351,6 +1450,51 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrCodeElement = document.querySelector('.loyalty-qr-code-image');
+            const qrZoomOverlay = document.getElementById('qrZoomOverlay');
+            const qrZoomImage = document.getElementById('qrZoomImage');
+            const qrZoomClose = document.getElementById('qrZoomClose');
+
+            if (qrCodeElement) {
+                qrCodeElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    const qrImage = this.querySelector('img');
+                    if (qrImage) {
+                        qrZoomImage.src = qrImage.src;
+                        qrZoomOverlay.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+            }
+
+            function closeQrZoom() {
+                qrZoomOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+
+            if (qrZoomClose) {
+                qrZoomClose.addEventListener('click', closeQrZoom);
+            }
+
+            if (qrZoomOverlay) {
+                qrZoomOverlay.addEventListener('click', function(e) {
+                    if (e.target === qrZoomOverlay) {
+                        closeQrZoom();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && qrZoomOverlay.classList.contains('active')) {
+                    closeQrZoom();
+                }
+            });
+        });
+    </script>
     
     @yield('js')
     @if(auth()->user()->role == "Client")
