@@ -2,37 +2,43 @@
     "name": "GazLite CRMS",
     "short_name": "GazLite",
     "start_url": "./pwa-launcher.html",
-    "scope": "./",
     "background_color": "#5DADE2",
     "description": "GazLite Customer Relationship Management System",
-    "display": "standalone",
-    "orientation": "portrait",
+    "display": "fullscreen",
     "theme_color": "#5DADE2",
 
     "icons": [
         {
-            "src": "images/icons/logo_128.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any"
+            "src": "/images/icons/logo_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
         },
         {
-            "src": "images/icons/logo_128.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
+            "src": "/images/icons/splash_640x1136.png",
+            "sizes": "640x1136",
+            "type": "image/png"
         },
         {
-            "src": "images/icons/logo_512.png",
+            "src": "/images/icons/logo_512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any"
-        },
+            "form_factor": "wide"
+        }
+    ],
+
+    "screenshots": [
         {
-            "src": "images/icons/logo_512.png",
+            "src": "/images/icons/logo_512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "maskable"
+            "form_factor": "wide",
+            "label": "GazLite CRMS"
+        },
+        {
+            "src": "/images/icons/logo_512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "label": "GazLite CRMS"
         }
     ]
 }
