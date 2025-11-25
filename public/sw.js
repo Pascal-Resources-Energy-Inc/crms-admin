@@ -33,6 +33,9 @@ const OFFLINE_URLS = [
   "https://cdn.jsdelivr.net/npm/sweetalert2@11",
   "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css",
   
+  "https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js",
+  "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js",
+  
   `${BASE_PATH}/inside_css/assets/js/layout.js`,
   `${BASE_PATH}/inside_css/assets/css/bootstrap.min.css`,
   `${BASE_PATH}/inside_css/assets/css/icons.min.css`,
