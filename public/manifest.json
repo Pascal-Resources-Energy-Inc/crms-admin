@@ -23,13 +23,13 @@
             "purpose": "maskable"
         },
         {
-            "src": "images/icons/logo_144.png",
+            "src": "images/icons/logo_512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "images/icons/logo_144.png",
+            "src": "images/icons/logo_512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
