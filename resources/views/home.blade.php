@@ -661,6 +661,17 @@ async function syncOfflineTransactions() {
     const failedCountEl = document.getElementById('failedCount');
     const lastSyncEl = document.getElementById('lastSync');
     
+    // Check internet connectivity first
+    if (!navigator.onLine) {
+        Swal.fire({
+            icon: 'error',
+            title: 'No Internet Connection',
+            text: 'Please check your internet connection and try again.',
+            confirmButtonColor: '#5BC2E7'
+        });
+        return;
+    }
+    
     const transactions = await getOfflineTransactions();
     
     console.log('Transactions to sync:', transactions);
@@ -672,7 +683,6 @@ async function syncOfflineTransactions() {
             text: 'No offline transactions to sync',
             confirmButtonColor: '#5BC2E7'
         });
-        // Hide button and status when no transactions
         button.classList.add('d-none');
         statusDiv.classList.add('d-none');
         return;
@@ -689,139 +699,334 @@ async function syncOfflineTransactions() {
     let failedCount = 0;
     const failedTransactions = [];
     
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        Swal.fire({
+            icon: 'error',
+            title: 'Security Error',
+            text: 'Security token not found. Please refresh the page.',
+            confirmButtonColor: '#5BC2E7'
+        });
+        button.disabled = false;
+        button.classList.remove('syncing');
+        button.querySelector('span').textContent = 'Sync Offline Transactions';
+        return;
+    }
+    
     // Sync each transaction
     for (const transaction of transactions) {
         try {
-            console.log('Syncing transaction:', transaction);
-            console.log(transaction);
+            console.log('Processing transaction:', transaction);
             
+            // Extract and validate data
+            let itemId = null;
+            let customerId = null;
+            let dealerId = null;
+            let quantity = 1;
+            let paymentMethod = 'cash';
+            
+            // Handle item_id
+            if (transaction.items && transaction.items.length > 0) {
+                itemId = transaction.items[0].id;
+            } else if (transaction.item_id) {
+                itemId = transaction.item_id;
+            }
+            
+            // Handle customer_id (multiple possible field names)
+            if (Array.isArray(transaction.customer_id)) {
+                customerId = transaction.customer_id[0];
+            } else if (transaction.customer_id) {
+                customerId = transaction.customer_id;
+            } else if (Array.isArray(transaction.client_id)) {
+                customerId = transaction.client_id[0];
+            } else if (transaction.client_id) {
+                customerId = transaction.client_id;
+            }
+            
+            // Handle dealer_id (multiple possible field names)
+            if (Array.isArray(transaction.dealer_id)) {
+                dealerId = transaction.dealer_id[0];
+            } else if (transaction.dealer_id) {
+                dealerId = transaction.dealer_id;
+            }
+            
+            // Handle quantity
+            if (transaction.quantity) {
+                quantity = parseInt(transaction.quantity);
+            } else if (transaction.qty) {
+                quantity = parseInt(transaction.qty);
+            }
+            
+            // Handle payment method
+            if (transaction.payment_method) {
+                paymentMethod = transaction.payment_method;
+            } else if (transaction.paymentMethod) {
+                paymentMethod = transaction.paymentMethod;
+            }
+            
+            // Validate required fields
+            if (!itemId) {
+                throw new Error('Item ID is missing');
+            }
+            if (!customerId) {
+                throw new Error('Customer ID is missing');
+            }
+            if (isNaN(quantity) || quantity < 1) {
+                throw new Error('Invalid quantity: ' + quantity);
+            }
+            
+            // Build transaction data (dealer_id is optional - will be set from auth on server)
             const transactionData = {
-                item_id: transaction.items[0].id,
-                qty: parseInt(transaction.quantity) || 1,
-                customer_id: Array.isArray(transaction.customer_id) ? transaction.customer_id[0] : (transaction.customer_id || null),
-                payment_method: transaction.payment_method || 'cash',
-                dealer_id: Array.isArray(transaction.dealer_id) ? transaction.dealer_id[0] : (transaction.dealer_id || null)
+                item_id: itemId,
+                qty: quantity,
+                customer_id: customerId,
+                payment_method: paymentMethod
             };
             
-            console.log('Original transaction from IndexedDB:', transaction);
-            console.log('Mapped data being sent:', transactionData);
-            
-            // Validate before sending
-            if (!transactionData.item_id) {
-                throw new Error('Invalid item_id in transaction');
-            }
-            if (!transactionData.customer_id) {
-                throw new Error('Invalid customer_id in transaction');
+            // Only include dealer_id if it exists
+            if (dealerId) {
+                transactionData.dealer_id = dealerId;
             }
             
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            console.log('Sending data:', transactionData);
             
-            // Send to API endpoint
+            // Send to API endpoint with credentials
             const response = await fetch('/api/transactions/store', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
+                    'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin', // Important: include cookies for authentication
                 body: JSON.stringify(transactionData)
             });
             
             console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
             
-            // Try to parse response
+            // Parse response
             let result;
             try {
                 const responseText = await response.text();
                 console.log('Raw response:', responseText);
+                
+                if (!responseText) {
+                    throw new Error('Empty response from server');
+                }
+                
                 result = JSON.parse(responseText);
             } catch (parseError) {
                 console.error('Failed to parse response:', parseError);
-                throw new Error('Invalid JSON response from server');
+                throw new Error(`Server returned invalid response (Status: ${response.status})`);
             }
             
-            console.log('Sync response:', result);
+            console.log('Parsed response:', result);
             
+            // Check if sync was successful
             if (response.ok && result.success) {
                 // Delete from IndexedDB after successful sync
                 await deleteOfflineTransaction(transaction.id);
                 syncedCount++;
-                console.log('Successfully synced transaction ID:', transaction.id);
+                console.log('✓ Successfully synced transaction ID:', transaction.id);
             } else {
+                // Extract detailed error message
+                let errorMessage = 'Unknown error';
+                
+                if (result.message) {
+                    errorMessage = result.message;
+                } else if (result.errors) {
+                    if (typeof result.errors === 'object') {
+                        errorMessage = Object.values(result.errors).flat().join(', ');
+                    } else {
+                        errorMessage = result.errors;
+                    }
+                }
+                
                 failedCount++;
                 failedTransactions.push({
                     transaction: transaction,
-                    error: result.message || result.errors || 'Unknown error',
-                    status: response.status
+                    error: errorMessage,
+                    status: response.status,
+                    sentData: transactionData,
+                    response: result
                 });
-                console.error('Failed to sync transaction:', result);
+                
+                console.error('✗ Failed to sync transaction:', {
+                    transactionId: transaction.id,
+                    status: response.status,
+                    error: errorMessage,
+                    sentData: transactionData,
+                    serverResponse: result
+                });
             }
+            
         } catch (error) {
             failedCount++;
             failedTransactions.push({
                 transaction: transaction,
-                error: error.message
+                error: error.message,
+                stack: error.stack
             });
-            console.error('Error syncing transaction:', error);
+            console.error('✗ Exception while syncing transaction:', {
+                error: error.message,
+                transaction: transaction,
+                stack: error.stack
+            });
         }
         
-        // Update progress
+        // Update progress display
         syncedCountEl.textContent = syncedCount;
         failedCountEl.textContent = failedCount;
         pendingCountEl.textContent = transactions.length - syncedCount - failedCount;
         
-        // Add a small delay between requests
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay between requests to avoid overwhelming server
+        await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    // Update UI after sync
+    // Reset UI state
     button.disabled = false;
     button.classList.remove('syncing');
     button.querySelector('span').textContent = 'Sync Offline Transactions';
     
+    // Update last sync time
     const now = new Date();
     lastSyncEl.textContent = now.toLocaleString();
     
-    // Show detailed result message with SweetAlert2
+    // Show result summary
     if (syncedCount > 0) {
         if (failedCount > 0) {
+            // Partial success - show which ones failed
+            const errorSummary = failedTransactions.slice(0, 3).map((ft, idx) => {
+                const txId = ft.transaction.id || ft.transaction.timestamp || (idx + 1);
+                return `<li class="text-start"><strong>Transaction ${txId}:</strong> ${ft.error}</li>`;
+            }).join('');
+            
+            const moreErrors = failedCount > 3 ? `<li class="text-start">...and ${failedCount - 3} more</li>` : '';
+            
             Swal.fire({
                 icon: 'warning',
                 title: 'Partial Success',
-                html: `Successfully synced <strong>${syncedCount}</strong> transaction(s)<br>${failedCount} failed to sync.`,
-                confirmButtonColor: '#5BC2E7'
+                html: `
+                    <div class="text-center mb-3">
+                        <p>Successfully synced <strong class="text-success">${syncedCount}</strong> transaction(s)</p>
+                        <p><strong class="text-danger">${failedCount}</strong> failed to sync</p>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-start mb-2"><strong>Failed Transactions:</strong></p>
+                        <ul class="text-muted" style="font-size: 0.9em; max-height: 200px; overflow-y: auto;">
+                            ${errorSummary}
+                            ${moreErrors}
+                        </ul>
+                    </div>
+                `,
+                confirmButtonColor: '#5BC2E7',
+                confirmButtonText: 'OK',
+                width: '600px',
+                footer: '<small>Check browser console for detailed error logs</small>'
             });
-            console.error('Failed transactions:', failedTransactions);
             
-            if (failedTransactions.length > 0) {
-                console.error('First failed transaction details:', failedTransactions[0]);
-            }
+            console.group('❌ Failed Transactions Details');
+            failedTransactions.forEach((ft, idx) => {
+                console.error(`Transaction ${idx + 1}:`, ft);
+            });
+            console.groupEnd();
+            
         } else {
+            // Complete success
             Swal.fire({
                 icon: 'success',
                 title: 'Sync Complete!',
-                text: `Successfully synced ${syncedCount} transaction(s)`,
-                confirmButtonColor: '#5BC2E7'
+                html: `
+                    <p>Successfully synced <strong>${syncedCount}</strong> transaction(s)</p>
+                    <p class="text-muted mt-2">The page will refresh to show updated data</p>
+                `,
+                confirmButtonColor: '#5BC2E7',
+                timer: 2000,
+                timerProgressBar: true
             }).then(() => {
-                // Reload page to show new transactions if all synced successfully
                 window.location.reload();
             });
         }
     } else {
+        // Complete failure
+        const firstError = failedTransactions[0];
+        let errorDetail = 'Unknown error occurred';
+        
+        if (firstError) {
+            errorDetail = firstError.error;
+            
+            // Add more context if available
+            if (firstError.status === 422) {
+                errorDetail += '<br><small class="text-muted">This usually means some required data is missing or invalid.</small>';
+            } else if (firstError.status === 401 || firstError.status === 403) {
+                errorDetail += '<br><small class="text-muted">Authentication failed. Please try logging out and logging back in.</small>';
+            } else if (firstError.status >= 500) {
+                errorDetail += '<br><small class="text-muted">Server error. Please contact support if this persists.</small>';
+            }
+        }
+        
         Swal.fire({
             icon: 'error',
             title: 'Sync Failed',
-            text: 'Failed to sync transactions. Please check your connection and try again.',
-            confirmButtonColor: '#5BC2E7'
+            html: `
+                <p>Failed to sync any transactions.</p>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <p class="mb-0"><strong>Error:</strong></p>
+                    <p class="text-danger mb-0">${errorDetail}</p>
+                </div>
+            `,
+            confirmButtonColor: '#5BC2E7',
+            footer: '<small>Check browser console (F12) for technical details</small>'
         });
-        console.error('All transactions failed:', failedTransactions);
+        
+        console.group('❌ All Transactions Failed');
+        console.error('Failed transactions:', failedTransactions);
+        console.groupEnd();
     }
     
-    // Check remaining transactions (will hide button if none left)
+    // Check for remaining transactions
     await checkPendingTransactions();
+}
+
+// Network status monitoring
+window.addEventListener('online', () => {
+    console.log('🌐 Network connection restored');
+    checkPendingTransactions();
+});
+
+window.addEventListener('offline', () => {
+    console.log('📡 Network connection lost - transactions will be saved offline');
+});
+
+// Debug helper function
+async function debugSyncData() {
+    console.group('🔍 Sync Debug Information');
+    
+    const transactions = await getOfflineTransactions();
+    console.log('📦 Total pending transactions:', transactions.length);
+    
+    if (transactions.length > 0) {
+        console.log('📋 First transaction:', transactions[0]);
+        console.log('🔑 Keys in transaction:', Object.keys(transactions[0]));
+        
+        // Check for common data issues
+        const firstTx = transactions[0];
+        console.log('✓ Validation:');
+        console.log('  - Has item_id:', !!(firstTx.item_id || (firstTx.items && firstTx.items[0])));
+        console.log('  - Has customer_id:', !!(firstTx.customer_id || firstTx.client_id));
+        console.log('  - Has dealer_id:', !!firstTx.dealer_id);
+        console.log('  - Has quantity:', !!(firstTx.quantity || firstTx.qty));
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    console.log('🔒 CSRF Token present:', !!csrfToken);
+    console.log('🌐 Online status:', navigator.onLine);
+    
+    console.groupEnd();
 }
 
 // Initialize on page load

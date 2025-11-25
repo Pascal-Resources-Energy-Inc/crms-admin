@@ -121,22 +121,49 @@ class TransactionController extends Controller
 
     public function storeApi(Request $request)
 {
-    \Log::info('API Store Request:', $request->all());
+    \Log::info('=== API Store Request ===', [
+        'all_data' => $request->all(),
+        'headers' => $request->headers->all(),
+        'auth_check' => auth()->check(),
+        'auth_id' => auth()->id()
+    ]);
     
     try {
+        // Validate the request
+        $validated = $request->validate([
+            'item_id' => 'required|exists:items,id',
+            'customer_id' => 'required|exists:clients,id',
+            'qty' => 'required|integer|min:1',
+            'payment_method' => 'nullable|string|in:cash,gcash,bank',
+            'dealer_id' => 'nullable|exists:users,id'
+        ]);
+
         // Get item details
         $item = Item::findOrFail($request->item_id);
         $client = Client::findOrFail($request->customer_id);
 
-        // Determine dealer_id (priority: request > auth > null)
+        // Determine dealer_id
         $dealerId = $request->dealer_id ?? (auth()->check() ? auth()->id() : null);
         
         if (!$dealerId) {
+            \Log::error('Dealer ID missing', [
+                'auth_check' => auth()->check(),
+                'auth_id' => auth()->id(),
+                'request_dealer_id' => $request->dealer_id
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Dealer ID is required. Please ensure you are logged in.'
             ], 422);
         }
+
+        \Log::info('Creating transaction', [
+            'item_id' => $item->id,
+            'customer_id' => $request->customer_id,
+            'dealer_id' => $dealerId,
+            'qty' => $request->qty
+        ]);
 
         // Create transaction
         $transaction = new TransactionDetail;
@@ -154,7 +181,11 @@ class TransactionController extends Controller
         $transaction->payment_method = $request->payment_method ?? 'cash';
         $transaction->save();
         
-        \Log::info('Transaction saved successfully', ['transaction_id' => $transaction->id]);
+        \Log::info('✓ Transaction saved successfully', [
+            'transaction_id' => $transaction->id,
+            'item' => $transaction->item,
+            'qty' => $transaction->qty
+        ]);
 
         return response()->json([
             'success' => true,
@@ -173,10 +204,10 @@ class TransactionController extends Controller
         ], 201);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('API Validation Error: ' . json_encode([
+        \Log::error('❌ Validation Error', [
             'errors' => $e->errors(),
             'request_data' => $request->all()
-        ]));
+        ]);
         
         return response()->json([
             'success' => false,
@@ -184,8 +215,24 @@ class TransactionController extends Controller
             'errors' => $e->errors()
         ], 422);
 
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        \Log::error('❌ Model Not Found', [
+            'message' => $e->getMessage(),
+            'request_data' => $request->all()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Item or Customer not found. Please check the IDs.'
+        ], 404);
+
     } catch (\Exception $e) {
-        \Log::error('API Transaction Store Error: ' . $e->getMessage() . ' | Request: ' . json_encode($request->all()));
+        \Log::error('❌ Transaction Store Error', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'request_data' => $request->all()
+        ]);
         
         return response()->json([
             'success' => false,
